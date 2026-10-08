@@ -258,26 +258,15 @@ export class GateSystem {
     }
     uvAttr.needsUpdate = true;
 
-    // Front Arched Banner Face
+    // Front Arched Banner Face (Facing +Z)
     const bannerFront = new THREE.Mesh(bannerGeo, mats.bannerTop);
     bannerFront.position.set(0, 0, zOffset);
     bannerFront.castShadow = true;
     bannerFront.receiveShadow = true;
     group.add(bannerFront);
 
-    // Back Arched Banner Face (cloned geometry with flipped U so text is unreversed from behind)
-    const bannerBackGeo = bannerGeo.clone();
-    const backUvAttr = bannerBackGeo.attributes.uv;
-    for (let i = 0; i < posAttr.count; i++) {
-      const vx = posAttr.getX(i);
-      const vy = posAttr.getY(i);
-      const u = 1.0 - (vx - xOuterLeft) / rangeX; // horizontal flip for legible back reading
-      const v = (vy - yArchStart) / rangeY;
-      backUvAttr.setXY(i, u, v);
-    }
-    backUvAttr.needsUpdate = true;
-
-    const bannerBack = new THREE.Mesh(bannerBackGeo, mats.bannerTop);
+    // Back Arched Banner Face (Facing -Z, rotated 180 degrees so text reads normally from north approach)
+    const bannerBack = new THREE.Mesh(bannerGeo, mats.bannerTop);
     bannerBack.position.set(0, 0, -zOffset);
     bannerBack.rotation.y = Math.PI;
     bannerBack.castShadow = true;

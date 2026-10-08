@@ -54,8 +54,8 @@ export class LightingManager {
     );
     this.sun.position.set(35, 60, 25);
     this.sun.castShadow = true;
-    this.sun.shadow.mapSize.width = 2048;
-    this.sun.shadow.mapSize.height = 2048;
+    this.sun.shadow.mapSize.width = 1024;
+    this.sun.shadow.mapSize.height = 1024;
     this.sun.shadow.camera.near = 1;
     this.sun.shadow.camera.far = 140;
     this.sun.shadow.camera.left = -70;
@@ -98,15 +98,9 @@ export class LightingManager {
     this.scene.add(domeSpot);
     this.architecturalLights.push(domeSpot);
 
-    // 3. Veranda warm soft floodlight
-    const verandaPoint = new THREE.PointLight(0xffbe6b, 2.0, 16, 1.2);
-    verandaPoint.position.set(mosquePos.x + 6, 3.5, mosquePos.z);
-    this.scene.add(verandaPoint);
-    this.architecturalLights.push(verandaPoint);
-
-    // 4. Courtyard ambient ground fill
-    const courtyardPoint = new THREE.PointLight(0xffdfa0, 1.5, 20, 1.2);
-    courtyardPoint.position.set(mosquePos.x + 11, 2.5, mosquePos.z);
+    // 3. Courtyard ambient ground fill
+    const courtyardPoint = new THREE.PointLight(0xffdfa0, 1.8, 24, 1.2);
+    courtyardPoint.position.set(mosquePos.x + 10, 3.0, mosquePos.z);
     this.scene.add(courtyardPoint);
     this.architecturalLights.push(courtyardPoint);
 
@@ -122,24 +116,16 @@ export class LightingManager {
   createRoundaboutLighting() {
     const center = this.config.roundabout.center;
 
-    // Primary warm spotlight illuminating the 3-tier tire monument from south-east
-    const rbSpot1 = new THREE.SpotLight(0xfff1d6, 2.4, 16, Math.PI / 3.2, 0.45, 1.2);
+    // Primary warm spotlight illuminating the 3-tier tire monument
+    const rbSpot1 = new THREE.SpotLight(0xfff1d6, 2.6, 18, Math.PI / 3.2, 0.45, 1.2);
     rbSpot1.position.set(center.x + 3.8, 5.5, center.z + 3.8);
     rbSpot1.target.position.set(center.x, 1.0, center.z);
     this.scene.add(rbSpot1.target);
     this.scene.add(rbSpot1);
     this.architecturalLights.push(rbSpot1);
 
-    // Secondary fill spotlight from north-west to highlight red-white chevron details from both sides
-    const rbSpot2 = new THREE.SpotLight(0xffeed6, 1.6, 15, Math.PI / 3.5, 0.5, 1.2);
-    rbSpot2.position.set(center.x - 3.5, 5.0, center.z - 3.5);
-    rbSpot2.target.position.set(center.x, 1.0, center.z);
-    this.scene.add(rbSpot2.target);
-    this.scene.add(rbSpot2);
-    this.architecturalLights.push(rbSpot2);
-
     // Island ground fill
-    const rbPoint = new THREE.PointLight(0xffd599, 1.4, 10, 1.2);
+    const rbPoint = new THREE.PointLight(0xffd599, 1.6, 12, 1.2);
     rbPoint.position.set(center.x, 2.5, center.z);
     this.scene.add(rbPoint);
     this.architecturalLights.push(rbPoint);
@@ -300,23 +286,5 @@ export class LightingManager {
 
   update(delta) {
     this.time += delta;
-
-    if (this.isNight) {
-      // Subtle organic breathing animation on decorative lights
-      const pulse = 1.0 + Math.sin(this.time * 1.5) * 0.05;
-      this.decorativeLights.forEach(l => {
-        if (l.userData.baseIntensity) {
-          l.intensity = l.userData.baseIntensity * pulse;
-        }
-      });
-
-      // Subtle twinkling on glow sprites
-      this.glowSprites.forEach((s, idx) => {
-        if (s.userData.baseScale) {
-          const tw = 1.0 + Math.sin(this.time * 2.5 + idx * 0.5) * 0.12;
-          s.scale.set(s.userData.baseScale * tw, s.userData.baseScale * tw, 1);
-        }
-      });
-    }
   }
 }

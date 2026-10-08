@@ -87,7 +87,7 @@ export class ArchSystem {
     const leftPoles = [];
     const rightPoles = [];
 
-    poles.forEach(pole => {
+    poles.forEach((pole, index) => {
       let leftPos, rightPos;
 
       if (!isEastRoad) {
@@ -100,12 +100,16 @@ export class ArchSystem {
         rightPos = { x: pole.x, y: 0, z: halfWidth, side: 1 };
       }
 
+      // Strategic zone illumination: 2 key PointLights per road section provide unbroken coverage
+      // without overloading WebGL fragment shaders with 30 overlapping point lights
+      const hasRoadLight = (index === 1 || index === 3);
+
       // Build left roadside post
-      this.createBambooPost(leftPos, postHeight, bambooMat, bambooDarkMat, baseStoneMat, isEastRoad);
+      this.createBambooPost(leftPos, postHeight, bambooMat, bambooDarkMat, baseStoneMat, isEastRoad, hasRoadLight);
       leftPoles.push(leftPos);
 
       // Build right roadside post
-      this.createBambooPost(rightPos, postHeight, bambooMat, bambooDarkMat, baseStoneMat, isEastRoad);
+      this.createBambooPost(rightPos, postHeight, bambooMat, bambooDarkMat, baseStoneMat, isEastRoad, false);
       rightPoles.push(rightPos);
     });
 
@@ -117,7 +121,7 @@ export class ArchSystem {
   /**
    * Create a single vertical roadside bamboo post with spiral lights and top lantern.
    */
-  createBambooPost(pos, height, bambooMat, bambooDarkMat, baseStoneMat, isEastRoad) {
+  createBambooPost(pos, height, bambooMat, bambooDarkMat, baseStoneMat, isEastRoad, addPointLight = false) {
     const group = new THREE.Group();
     group.position.set(pos.x, 0, pos.z);
     group.name = `bamboo-post-${pos.x.toFixed(1)}-${pos.z.toFixed(1)}`;
@@ -210,20 +214,22 @@ export class ArchSystem {
     // 6. Spiral string lights wrapping up the vertical bamboo pole
     this.createSpiralPoleLights(group, height);
 
-    // 7. Soft downward point light on the roadside
-    const pointLight = new THREE.PointLight(
-      this.currentColorHex,
-      this.config.nightMode ? 1.8 : 0,
-      12,
-      1.5
-    );
-    pointLight.position.set(0, height * 0.8, 0);
-    pointLight.userData.baseIntensity = 1.8;
-    pointLight.userData.isRoadsideLight = true;
-    group.add(pointLight);
+    // 7. Soft downward point light on the roadside (only on key strategic posts)
+    if (addPointLight) {
+      const pointLight = new THREE.PointLight(
+        this.currentColorHex,
+        this.config.nightMode ? 2.4 : 0,
+        18,
+        1.5
+      );
+      pointLight.position.set(0, height * 0.85, 0);
+      pointLight.userData.baseIntensity = 2.4;
+      pointLight.userData.isRoadsideLight = true;
+      group.add(pointLight);
 
-    if (this.lightingManager) {
-      this.lightingManager.registerDecorativeLight(pointLight);
+      if (this.lightingManager) {
+        this.lightingManager.registerDecorativeLight(pointLight);
+      }
     }
 
     this.scene.add(group);

@@ -173,13 +173,16 @@ export class MosqueFenceSystem {
         this.lightingManager.registerEmissiveMesh(lampMesh);
       }
 
-      const lampLight = new THREE.PointLight(0xffffff, this.config.nightMode ? 0.75 : 0, 7.5, 1.5);
-      lampLight.position.set(px, capTopY + 0.25, pz);
-      lampLight.userData.baseIntensity = 0.75;
-      this.scene.add(lampLight);
+      // Soft ground illumination on key corners/center of fence run
+      if (i === 0 || i === Math.floor(postCount / 2)) {
+        const lampLight = new THREE.PointLight(0xffffff, this.config.nightMode ? 0.9 : 0, 10, 1.5);
+        lampLight.position.set(px, capTopY + 0.25, pz);
+        lampLight.userData.baseIntensity = 0.9;
+        this.scene.add(lampLight);
 
-      if (this.lightingManager) {
-        this.lightingManager.registerDecorativeLight(lampLight);
+        if (this.lightingManager) {
+          this.lightingManager.registerDecorativeLight(lampLight);
+        }
       }
 
       // Panel between columns
@@ -305,13 +308,15 @@ export class MosqueFenceSystem {
         this.lightingManager.registerEmissiveMesh(lampMesh);
       }
 
-      const lampLight = new THREE.PointLight(0xffffff, this.config.nightMode ? 0.9 : 0, 8, 1.5);
-      lampLight.position.set(0, capTopY + 0.25, pz);
-      lampLight.userData.baseIntensity = 0.9;
-      group.add(lampLight);
+      if (side === 1) {
+        const lampLight = new THREE.PointLight(0xffffff, this.config.nightMode ? 0.9 : 0, 10, 1.5);
+        lampLight.position.set(0, capTopY + 0.25, pz);
+        lampLight.userData.baseIntensity = 0.9;
+        group.add(lampLight);
 
-      if (this.lightingManager) {
-        this.lightingManager.registerDecorativeLight(lampLight);
+        if (this.lightingManager) {
+          this.lightingManager.registerDecorativeLight(lampLight);
+        }
       }
     });
 

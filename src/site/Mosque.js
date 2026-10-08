@@ -215,14 +215,12 @@ export class MosqueBuilder {
     // Central Parapet Header with Arabic Calligraphy Plaque: "مسجد المهاجرين"
     this.createCalligraphyPlaque(group, colX, -0.5, wallCreamMat, navyBlueMat, goldMat);
 
-    // Warm veranda ceiling lights
-    [-4.5, -0.5, 3.5].forEach(lz => {
-      const vLight = new THREE.PointLight(0xffbe6b, 2.0, 10, 1.4);
-      vLight.position.set(4.0, 4.3, lz);
-      vLight.userData.baseIntensity = 2.0;
-      group.add(vLight);
-      if (this.lightingManager) this.lightingManager.registerDecorativeLight(vLight);
-    });
+    // Warm veranda ceiling light (single balanced fill light covering the whole veranda)
+    const vLight = new THREE.PointLight(0xffbe6b, 2.6, 16, 1.3);
+    vLight.position.set(4.0, 4.3, -0.5);
+    vLight.userData.baseIntensity = 2.6;
+    group.add(vLight);
+    if (this.lightingManager) this.lightingManager.registerDecorativeLight(vLight);
 
     // ==========================================
     // 4. UPPER CLERESTORY TIER (Tingkat Atas Bawah Kubah)
@@ -810,12 +808,6 @@ export class MosqueBuilder {
       globe.position.set(pos.x, 1.55, pos.z);
       group.add(globe);
       if (this.lightingManager) this.lightingManager.registerEmissiveMesh(globe);
-
-      const pLight = new THREE.PointLight(0xffbe6b, 1.8, 10, 1.4);
-      pLight.position.set(pos.x, 1.6, pos.z);
-      pLight.userData.baseIntensity = 1.8;
-      group.add(pLight);
-      if (this.lightingManager) this.lightingManager.registerDecorativeLight(pLight);
     });
   }
 }

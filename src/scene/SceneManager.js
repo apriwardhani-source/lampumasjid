@@ -63,10 +63,12 @@ export class SceneManager {
     const renderPass = new RenderPass(this.scene, this.camera);
     this.composer.addPass(renderPass);
 
-    // Softer, gentle bloom to avoid harsh glare
+    // Half-resolution bloom for 4x faster fill-rate and softer, smoother glow
+    const bloomW = Math.max(256, Math.floor(width / 2));
+    const bloomH = Math.max(256, Math.floor(height / 2));
     this.bloomPass = new UnrealBloomPass(
-      new THREE.Vector2(width, height),
-      0.4,   // Soft bloom strength (gentle glow)
+      new THREE.Vector2(bloomW, bloomH),
+      0.42,  // Soft bloom strength (gentle glow)
       0.35,  // bloom radius
       0.75   // bloom threshold (only bright LEDs glow softly)
     );
@@ -97,6 +99,9 @@ export class SceneManager {
       this.renderer.setSize(w, h);
       if (this.composer) {
         this.composer.setSize(w, h);
+      }
+      if (this.bloomPass) {
+        this.bloomPass.resolution.set(Math.max(256, Math.floor(w / 2)), Math.max(256, Math.floor(h / 2)));
       }
     });
   }

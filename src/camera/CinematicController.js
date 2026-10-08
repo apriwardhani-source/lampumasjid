@@ -129,34 +129,37 @@ export class CinematicController {
   bindUI(elements) {
     this.ui = elements;
 
-    if (this.ui.btnPlayPause) {
-      this.ui.btnPlayPause.addEventListener('click', () => this.togglePlayPause());
-    }
-    if (this.ui.btnNext) {
-      this.ui.btnNext.addEventListener('click', () => this.nextChapter());
-    }
-    if (this.ui.btnPrev) {
-      this.ui.btnPrev.addEventListener('click', () => this.prevChapter());
-    }
-    if (this.ui.btnExit) {
-      this.ui.btnExit.addEventListener('click', () => this.stop());
-    }
-    if (this.ui.btnSpeed) {
-      this.ui.btnSpeed.addEventListener('click', () => this.cycleSpeed());
+    if (this.ui && this.ui.btnExit) {
+      this.ui.btnExit.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.stop();
+      });
     }
 
-    // Keyboard shortcuts
+    // Clicking / tapping canvas during cinematic mode shows clean exit pill briefly or exits
+    const canvas = this.sceneManager.canvas;
+    if (canvas) {
+      const showExitHint = () => {
+        if (!this.isActive) return;
+        if (this.ui && this.ui.btnExit) {
+          this.ui.btnExit.classList.add('show');
+          if (this._exitTimeout) clearTimeout(this._exitTimeout);
+          this._exitTimeout = setTimeout(() => {
+            if (this.ui && this.ui.btnExit) this.ui.btnExit.classList.remove('show');
+          }, 2600);
+        }
+      };
+
+      canvas.addEventListener('click', () => showExitHint());
+      canvas.addEventListener('touchstart', () => showExitHint(), { passive: true });
+    }
+
+    // Keyboard shortcuts: Escape or Space exits cinematic tour immediately
     window.addEventListener('keydown', e => {
       if (!this.isActive) return;
-      if (e.key === 'Escape') {
-        this.stop();
-      } else if (e.key === ' ' || e.code === 'Space') {
+      if (e.key === 'Escape' || e.key === ' ' || e.code === 'Space') {
         e.preventDefault();
-        this.togglePlayPause();
-      } else if (e.key === 'ArrowRight') {
-        this.nextChapter();
-      } else if (e.key === 'ArrowLeft') {
-        this.prevChapter();
+        this.stop();
       }
     });
   }
@@ -168,18 +171,31 @@ export class CinematicController {
     this.chapterProgress = 0;
     this.elapsedTime = 0;
 
+    // Automatically request browser fullscreen for pure immersive cinema
+    if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
+      document.documentElement.requestFullscreen().catch(() => {});
+    }
+
     // Disable OrbitControls during cinematic tour
     if (this.controls) {
       this.controls.enabled = false;
     }
 
-    // Show cinematic letterbox & UI
+    // Enter pure clean cinematic mode (Zero icons, zero overlays)
     document.body.classList.add('cinematic-active');
     if (this.ui && this.ui.overlay) {
+      this.ui.overlay.classList.remove('hidden');
       this.ui.overlay.classList.add('visible');
     }
 
-    this.updateChapterUI();
+    // Show exit pill briefly at start so user knows how to exit, then fade out
+    if (this.ui && this.ui.btnExit) {
+      this.ui.btnExit.classList.add('show');
+      if (this._exitTimeout) clearTimeout(this._exitTimeout);
+      this._exitTimeout = setTimeout(() => {
+        if (this.ui && this.ui.btnExit) this.ui.btnExit.classList.remove('show');
+      }, 2400);
+    }
   }
 
   stop() {
@@ -197,14 +213,15 @@ export class CinematicController {
     document.body.classList.remove('cinematic-active');
     if (this.ui && this.ui.overlay) {
       this.ui.overlay.classList.remove('visible');
+      this.ui.overlay.classList.add('hidden');
     }
 
-    // Update preset button active state in main UI if available
-    const activePreset = document.querySelector('.preset-btn.active');
-    if (!activePreset) {
-      const overviewBtn = document.querySelector('[data-preset="overview"]');
-      if (overviewBtn) overviewBtn.classList.add('active');
-    }
+    if (this._exitTimeout) clearTimeout(this._exitTimeout);
+
+    // Update preset button active state in main UI
+    document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+    const overviewBtn = document.querySelector('[data-preset="overview"]');
+    if (overviewBtn) overviewBtn.classList.add('active');
   }
 
   toggle() {

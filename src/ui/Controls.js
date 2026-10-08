@@ -3,10 +3,11 @@
  */
 
 export class UIControls {
-  constructor({ cameraManager, cinematicController, freeWalkController, lightingManager, archSystem, gateSystem, roundabout, sceneManager, config }) {
+  constructor({ cameraManager, cinematicController, freeWalkController, photoModeController, lightingManager, archSystem, gateSystem, roundabout, sceneManager, config }) {
     this.cameraManager = cameraManager;
     this.cinematicController = cinematicController;
     this.freeWalkController = freeWalkController;
+    this.photoModeController = photoModeController;
     this.lightingManager = lightingManager;
     this.archSystem = archSystem;
     this.gateSystem = gateSystem;
@@ -41,7 +42,7 @@ export class UIControls {
   }
 
   setupCameraPresets() {
-    const buttons = document.querySelectorAll('.preset-btn:not(.btn-cinematic):not(.btn-freewalk)');
+    const buttons = document.querySelectorAll('.preset-btn:not(.btn-cinematic):not(.btn-freewalk):not(.btn-photo-mode)');
 
     buttons.forEach(btn => {
       btn.addEventListener('click', () => {
@@ -50,6 +51,9 @@ export class UIControls {
         }
         if (this.freeWalkController && this.freeWalkController.isActive) {
           this.freeWalkController.stopWalk();
+        }
+        if (this.photoModeController && this.photoModeController.isActive) {
+          this.photoModeController.stop();
         }
         const preset = btn.dataset.preset;
         this.cameraManager.goToPreset(preset);
@@ -66,6 +70,9 @@ export class UIControls {
         if (this.freeWalkController && this.freeWalkController.isActive) {
           this.freeWalkController.stopWalk();
         }
+        if (this.photoModeController && this.photoModeController.isActive) {
+          this.photoModeController.stop();
+        }
         if (this.cinematicController) {
           this.cinematicController.start();
         }
@@ -78,11 +85,39 @@ export class UIControls {
         if (this.cinematicController && this.cinematicController.isActive) {
           this.cinematicController.stop();
         }
+        if (this.photoModeController && this.photoModeController.isActive) {
+          this.photoModeController.stop();
+        }
         if (this.freeWalkController) {
           this.freeWalkController.startWalk();
         }
       });
     }
+
+    const btnPhotoMode = document.getElementById('btn-photo-mode');
+    if (btnPhotoMode) {
+      btnPhotoMode.addEventListener('click', () => {
+        if (this.cinematicController && this.cinematicController.isActive) {
+          this.cinematicController.stop();
+        }
+        if (this.freeWalkController && this.freeWalkController.isActive) {
+          this.freeWalkController.stopWalk();
+        }
+        if (this.photoModeController) {
+          this.photoModeController.start();
+        }
+      });
+    }
+
+    // Global keyboard shortcut: 'p' opens Photo Mode
+    window.addEventListener('keydown', e => {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+      if (e.key === 'p' || e.key === 'P') {
+        if (!this.photoModeController?.isActive && !this.cinematicController?.isActive) {
+          if (btnPhotoMode) btnPhotoMode.click();
+        }
+      }
+    });
   }
 
   setupFreeWalk() {
@@ -100,16 +135,7 @@ export class UIControls {
 
     this.cinematicController.bindUI({
       overlay: document.getElementById('cinematic-overlay'),
-      btnPlayPause: document.getElementById('cinematic-btn-play-pause'),
-      btnNext: document.getElementById('cinematic-btn-next'),
-      btnPrev: document.getElementById('cinematic-btn-prev'),
       btnExit: document.getElementById('cinematic-btn-exit'),
-      btnSpeed: document.getElementById('cinematic-btn-speed'),
-      chapterNum: document.getElementById('cinematic-chapter-num'),
-      chapterTitle: document.getElementById('cinematic-chapter-title'),
-      chapterSubtitle: document.getElementById('cinematic-chapter-subtitle'),
-      progressFill: document.getElementById('cinematic-progress-fill'),
-      timer: document.getElementById('cinematic-timer'),
     });
   }
 

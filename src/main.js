@@ -15,6 +15,7 @@ import { BridgeRiverSystem } from './site/BridgeRiverSystem.js';
 import { CameraManager } from './camera/CameraManager.js';
 import { CinematicController } from './camera/CinematicController.js';
 import { FreeWalkController } from './camera/FreeWalkController.js';
+import { PhotoModeController } from './camera/PhotoModeController.js';
 import { UIControls } from './ui/Controls.js';
 import { siteConfig } from './config/siteConfig.js';
 
@@ -121,6 +122,14 @@ class App {
         siteConfig
       );
 
+      // Photo Mode Controller (Clean Photography & Screenshot Capture)
+      this.photoModeController = new PhotoModeController({
+        sceneManager: this.sceneManager,
+        cameraManager: this.cameraManager,
+        lightingManager: this.lightingManager,
+        config: siteConfig,
+      });
+
       this.updateLoading(95, 'Initializing controls...');
 
       // UI Controls
@@ -128,6 +137,7 @@ class App {
         cameraManager: this.cameraManager,
         cinematicController: this.cinematicController,
         freeWalkController: this.freeWalkController,
+        photoModeController: this.photoModeController,
         lightingManager: this.lightingManager,
         archSystem: this.archSystem,
         gateSystem: this.gateSystem,

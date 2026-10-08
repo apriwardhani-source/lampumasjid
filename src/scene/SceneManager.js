@@ -28,6 +28,7 @@ export class SceneManager {
       canvas: this.canvas,
       antialias: true,
       alpha: false,
+      preserveDrawingBuffer: true,
       powerPreference: 'high-performance',
     });
     this.renderer.setPixelRatio(this.getOptimalPixelRatio());
@@ -37,6 +38,15 @@ export class SceneManager {
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.15;
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
+  }
+
+  captureScreenshot() {
+    if (this.composer) {
+      this.composer.render();
+    } else {
+      this.renderer.render(this.scene, this.camera);
+    }
+    return this.canvas.toDataURL('image/png');
   }
 
   initScene() {

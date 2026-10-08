@@ -75,13 +75,17 @@
           <span class="preset-icon">🌉</span>
           <span class="preset-label">Jembatan</span>
         </button>
-        <button class="preset-btn btn-cinematic" id="btn-cinematic" title="Mulai Tur Sinematik">
+        <button class="preset-btn btn-cinematic" id="btn-cinematic" title="Mulai Tur Sinematik (Full Layar Bersih Tanpa Ikon)">
           <span class="preset-icon">🎬</span>
           <span class="preset-label">Sinematik</span>
         </button>
         <button class="preset-btn btn-freewalk" id="btn-freewalk" title="Jelajah Bebas (Bisa Jalan Kaki Open World)">
           <span class="preset-icon">🚶</span>
           <span class="preset-label">Jalan Kaki</span>
+        </button>
+        <button class="preset-btn btn-photo-mode" id="btn-photo-mode" title="Mode Foto / Fotografer (Ambil Gambar Tanpa Ikon)">
+          <span class="preset-icon">📸</span>
+          <span class="preset-label">Foto</span>
         </button>
       </nav>
 
@@ -129,40 +133,84 @@
         <p id="info-desc"></p>
       </div>
 
-      <!-- Cinematic Overlay (Letterbox Bars & Movie HUD) -->
+      <!-- Cinematic Overlay (Clean Fullscreen — Zero Icons) -->
       <div id="cinematic-overlay" class="hidden">
-        <!-- Top Letterbox Bar -->
-        <div class="cinematic-letterbox top">
-          <div class="cinematic-badge">
-            <span class="rec-dot"></span>
-            <span class="rec-title">MODE SINEMATIK</span>
-            <span class="rec-timer" id="cinematic-timer">00:00</span>
-          </div>
-          <div class="cinematic-top-right">
-            <button id="cinematic-btn-speed" class="cinematic-btn-text" title="Ganti Kecepatan Tur">1.0x</button>
-            <button id="cinematic-btn-exit" class="cinematic-btn-icon" title="Keluar Mode Sinematik (Esc)">✕</button>
-          </div>
+        <button id="cinematic-btn-exit" class="cinematic-clean-exit" title="Keluar Mode Sinematik (Esc atau Klik Layar)">
+          <span class="exit-icon">✕</span>
+          <span>Keluar</span>
+        </button>
+      </div>
+
+      <!-- Photo / Camera Mode HUD (Mode Foto & Fotografer Bebas Ikon) -->
+      <div id="photo-mode-hud" class="photo-mode-hud hidden">
+        <!-- Rule-of-Thirds Grid Guide -->
+        <div id="photo-grid-guide" class="photo-grid-guide hidden">
+          <div class="grid-line horizontal h1"></div>
+          <div class="grid-line horizontal h2"></div>
+          <div class="grid-line vertical v1"></div>
+          <div class="grid-line vertical v2"></div>
         </div>
 
-        <!-- Center Subtitle / Chapter Card -->
-        <div id="cinematic-caption-card">
-          <div class="cinematic-scene-tag" id="cinematic-chapter-num">SCENE 01 / 06</div>
-          <h2 class="cinematic-scene-title" id="cinematic-chapter-title">Gerbang Masuk Utama</h2>
-          <p class="cinematic-scene-desc" id="cinematic-chapter-subtitle">Rangka Taso Baja Ringan (Placeholder Banner)</p>
+        <!-- Camera Shutter Flash Effect -->
+        <div id="photo-shutter-flash" class="photo-shutter-flash"></div>
+
+        <!-- Camera Toast Feedback -->
+        <div id="photo-toast" class="photo-toast hidden">
+          <span class="toast-icon">📸</span>
+          <span id="photo-toast-text">Foto resolusi tinggi berhasil disimpan!</span>
         </div>
 
-        <!-- Bottom Letterbox Bar -->
-        <div class="cinematic-letterbox bottom">
-          <div class="cinematic-controls-bar">
-            <button id="cinematic-btn-prev" class="cinematic-btn-round" title="Adegan Sebelumnya (Panah Kiri)">⏮</button>
-            <button id="cinematic-btn-play-pause" class="cinematic-btn-round main" title="Jeda / Lanjutkan (Spasi)">⏸</button>
-            <button id="cinematic-btn-next" class="cinematic-btn-round" title="Adegan Berikutnya (Panah Kanan)">⏭</button>
-          </div>
-          <div class="cinematic-progress-container">
-            <div class="cinematic-progress-bar">
-              <div class="cinematic-progress-fill" id="cinematic-progress-fill"></div>
+        <!-- Top Header in Photo Mode -->
+        <div class="photo-top-bar" id="photo-top-bar">
+          <div class="photo-badge">
+            <span class="photo-icon">📷</span>
+            <div class="photo-badge-text">
+              <span class="photo-mode-title">MODE KAMERA 3D</span>
+              <span class="photo-mode-subtitle">Bebas Ikon & Ornamen • Kualitas Tinggi</span>
             </div>
           </div>
+          <button id="btn-exit-photo" class="btn-exit-photo" title="Keluar Mode Foto (Esc)">
+            <span class="exit-icon">✕</span>
+            <span>Kembali</span>
+          </button>
+        </div>
+
+        <!-- Bottom Floating Camera Bar -->
+        <div class="photo-bottom-bar" id="photo-bottom-bar">
+          <div class="photo-controls-pill">
+            <!-- Grid Toggle -->
+            <button id="btn-photo-grid" class="photo-tool-btn" title="Garis Komposisi 3x3 (G)">
+              <span class="tool-icon">⊞</span>
+              <span class="tool-label">Grid</span>
+            </button>
+
+            <!-- Day / Night Switch -->
+            <button id="btn-photo-daynight" class="photo-tool-btn" title="Ganti Waktu Siang / Malam">
+              <span id="photo-daynight-icon" class="tool-icon">🌙</span>
+              <span class="tool-label">Waktu</span>
+            </button>
+
+            <!-- Main Shutter Button -->
+            <button id="btn-photo-shutter" class="photo-shutter-btn" title="Ambil Foto Tanpa Ikon (Spasi / Enter)">
+              <div class="shutter-outer-ring">
+                <div class="shutter-inner-circle">
+                  <span class="shutter-camera-icon">📸</span>
+                </div>
+              </div>
+              <span class="shutter-btn-label">Jepret</span>
+            </button>
+
+            <!-- Hide UI for manual device screenshot -->
+            <button id="btn-photo-hide-ui" class="photo-tool-btn" title="Sembunyikan Semua Tombol (H)">
+              <span class="tool-icon">👁️</span>
+              <span class="tool-label">Bersih</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Hint when UI is hidden -->
+        <div id="photo-restore-hint" class="photo-restore-hint hidden">
+          <span>👆 Ketuk layar di mana saja untuk memunculkan tombol</span>
         </div>
       </div>
 

@@ -676,7 +676,7 @@ html, body {
   transform: translateY(-2px);
 }
 
-/* Hide standard HUD elements during cinematic & freewalk modes */
+/* Hide standard HUD elements during cinematic, freewalk & photo modes */
 body.cinematic-active #top-bar,
 body.cinematic-active #camera-presets,
 body.cinematic-active #side-controls,
@@ -688,24 +688,30 @@ body.freewalk-active #camera-presets,
 body.freewalk-active #side-controls,
 body.freewalk-active #color-palette-bar,
 body.freewalk-active #bottom-bar,
-body.freewalk-active #info-panel {
+body.freewalk-active #info-panel,
+body.photo-mode-active #top-bar,
+body.photo-mode-active #camera-presets,
+body.photo-mode-active #side-controls,
+body.photo-mode-active #color-palette-bar,
+body.photo-mode-active #bottom-bar,
+body.photo-mode-active #info-panel {
   opacity: 0 !important;
   pointer-events: none !important;
   transition: opacity 0.4s ease;
 }
 
-/* Cinematic Fullscreen Overlay */
+/* ========================================
+   CINEMATIC MODE — FULLSCREEN ZERO ICONS
+   ======================================== */
+
 #cinematic-overlay {
   position: fixed;
   inset: 0;
   z-index: 600;
   pointer-events: none;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
   opacity: 0;
   visibility: hidden;
-  transition: opacity 0.6s ease, visibility 0.6s ease;
+  transition: opacity 0.5s ease;
 }
 
 #cinematic-overlay.visible {
@@ -713,254 +719,432 @@ body.freewalk-active #info-panel {
   visibility: visible;
 }
 
-/* 21:9 Letterbox Black Bars */
-.cinematic-letterbox {
-  width: 100%;
-  background: #000000;
+/* Subtle, unobtrusive clean exit trigger (auto-fades after 2s) */
+.cinematic-clean-exit {
+  position: absolute;
+  top: max(16px, env(safe-area-inset-top));
+  right: max(16px, env(safe-area-inset-right));
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(10, 15, 25, 0.75);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  font-family: var(--font-primary);
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 8px 18px;
+  border-radius: 999px;
+  cursor: pointer;
   pointer-events: auto;
-  position: relative;
-  z-index: 10;
-  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  opacity: 0;
+  transform: translateY(-8px);
+  transition: opacity 0.35s ease, transform 0.35s ease, background 0.2s ease;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+  z-index: 650;
 }
 
-.cinematic-letterbox.top {
-  height: 64px;
+.cinematic-clean-exit.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.cinematic-clean-exit:hover {
+  background: rgba(220, 38, 38, 0.65);
+  border-color: #ef4444;
+}
+
+/* ========================================
+   PHOTO / CAMERA MODE (MODE FOTO BEBAS IKON)
+   ======================================== */
+
+.btn-photo-mode {
+  background: linear-gradient(135deg, rgba(56, 189, 248, 0.22) 0%, rgba(14, 165, 233, 0.08) 100%);
+  border-color: rgba(56, 189, 248, 0.45);
+  color: #38bdf8;
+  box-shadow: 0 0 14px rgba(56, 189, 248, 0.15);
+}
+
+.btn-photo-mode:hover {
+  background: linear-gradient(135deg, rgba(56, 189, 248, 0.35) 0%, rgba(14, 165, 233, 0.15) 100%);
+  border-color: #38bdf8;
+  color: #ffffff;
+}
+
+.photo-mode-hud {
+  position: fixed;
+  inset: 0;
+  z-index: 700;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+
+.photo-mode-hud.hidden {
+  opacity: 0;
+  visibility: hidden;
+}
+
+/* DSLR Shutter Flash Effect */
+.photo-shutter-flash {
+  position: fixed;
+  inset: 0;
+  background: #ffffff;
+  z-index: 9999;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.35s cubic-bezier(0.1, 0.9, 0.2, 1);
+}
+
+.photo-shutter-flash.flash {
+  opacity: 0.92;
+  transition: none;
+}
+
+/* Rule of Thirds 3x3 Composition Grid */
+.photo-grid-guide {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.32;
+  transition: opacity 0.3s ease;
+}
+
+.photo-grid-guide.hidden {
+  opacity: 0;
+}
+
+.photo-grid-guide .grid-line {
+  position: absolute;
+  background: rgba(255, 255, 255, 0.7);
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.6);
+}
+
+.photo-grid-guide .grid-line.horizontal {
+  left: 0;
+  right: 0;
+  height: 1px;
+}
+
+.photo-grid-guide .grid-line.horizontal.h1 { top: 33.333%; }
+.photo-grid-guide .grid-line.horizontal.h2 { top: 66.666%; }
+
+.photo-grid-guide .grid-line.vertical {
+  top: 0;
+  bottom: 0;
+  width: 1px;
+}
+
+.photo-grid-guide .grid-line.vertical.v1 { left: 33.333%; }
+.photo-grid-guide .grid-line.vertical.v2 { left: 66.666%; }
+
+/* Photo Mode Top Header */
+.photo-top-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  padding: max(16px, env(safe-area-inset-top)) max(24px, env(safe-area-inset-right)) 16px max(24px, env(safe-area-inset-left));
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 28px;
-  transform: translateY(-100%);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+  pointer-events: none;
+  transition: opacity 0.3s ease, transform 0.3s ease;
 }
 
-.cinematic-letterbox.bottom {
-  height: 76px;
+.photo-top-bar.hidden {
+  opacity: 0;
+  transform: translateY(-20px);
+  pointer-events: none;
+}
+
+.photo-badge {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(10, 15, 26, 0.82);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  border-radius: 999px;
+  padding: 8px 20px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  pointer-events: auto;
+}
+
+.photo-icon {
+  font-size: 1.3rem;
+}
+
+.photo-badge-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.photo-mode-title {
+  font-size: 0.85rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  color: #38bdf8;
+}
+
+.photo-mode-subtitle {
+  font-size: 0.68rem;
+  color: rgba(255, 255, 255, 0.7);
+  letter-spacing: 0.04em;
+}
+
+.btn-exit-photo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(220, 38, 38, 0.25);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(239, 68, 68, 0.5);
+  color: #fecaca;
+  font-family: var(--font-primary);
+  font-size: 0.84rem;
+  font-weight: 700;
+  padding: 9px 20px;
+  border-radius: 999px;
+  cursor: pointer;
+  pointer-events: auto;
+  box-shadow: 0 6px 20px rgba(220, 38, 38, 0.35);
+  transition: all 0.2s ease;
+}
+
+.btn-exit-photo:hover {
+  background: rgba(220, 38, 38, 0.5);
+  border-color: #ef4444;
+  color: #ffffff;
+  transform: translateY(-2px);
+}
+
+/* Photo Mode Bottom Floating Camera Bar */
+.photo-bottom-bar {
+  position: absolute;
+  bottom: max(22px, env(safe-area-inset-bottom));
+  left: 50%;
+  transform: translateX(-50%);
+  pointer-events: none;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.photo-bottom-bar.hidden {
+  opacity: 0;
+  transform: translate(-50%, 30px);
+  pointer-events: none;
+}
+
+.photo-controls-pill {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: rgba(10, 15, 25, 0.88);
+  backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 999px;
+  padding: 8px 18px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.75), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  pointer-events: auto;
+}
+
+.photo-tool-btn {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 0 20px 10px 20px;
-  transform: translateY(100%);
-  box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.8);
-}
-
-body.cinematic-active .cinematic-letterbox.top,
-body.cinematic-active .cinematic-letterbox.bottom {
-  transform: translateY(0);
-}
-
-/* Badge (REC Indicator) */
-.cinematic-badge {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  color: #ffffff;
-  font-family: var(--font-primary);
-  font-size: 0.85rem;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-}
-
-.rec-dot {
-  width: 10px;
-  height: 10px;
+  gap: 2px;
+  width: 50px;
+  height: 50px;
   border-radius: 50%;
-  background: #ff3333;
-  box-shadow: 0 0 12px #ff3333;
-  animation: rec-blink 1.2s infinite ease-in-out;
-}
-
-@keyframes rec-blink {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.25; transform: scale(0.85); }
-}
-
-.rec-title {
-  color: #f5f5f5;
-  font-weight: 700;
-  font-size: 0.78rem;
-  letter-spacing: 0.1em;
-}
-
-.rec-timer {
-  font-family: monospace;
-  font-size: 0.82rem;
-  color: rgba(255, 255, 255, 0.6);
-  padding-left: 8px;
-  border-left: 1px solid rgba(255, 255, 255, 0.25);
-}
-
-/* Top Right Buttons */
-.cinematic-top-right {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.cinematic-btn-text {
-  padding: 5px 12px;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.16);
   color: #ffffff;
-  font-size: 0.78rem;
-  font-weight: 600;
   cursor: pointer;
-  transition: var(--transition);
+  transition: all 0.2s ease;
 }
 
-.cinematic-btn-text:hover {
-  background: rgba(212, 168, 67, 0.25);
-  border-color: var(--color-gold);
-  color: var(--color-gold-light);
+.photo-tool-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
 }
 
-.cinematic-btn-icon {
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  color: #ffffff;
-  font-size: 0.95rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: var(--transition);
+.photo-tool-btn.active {
+  background: rgba(56, 189, 248, 0.25);
+  border-color: #38bdf8;
+  color: #38bdf8;
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.4);
 }
 
-.cinematic-btn-icon:hover {
-  background: rgba(255, 50, 50, 0.4);
-  border-color: #ff5555;
-  color: #ffffff;
-}
-
-/* Cinematic Chapter Caption Card */
-#cinematic-caption-card {
-  position: absolute;
-  left: 36px;
-  bottom: 96px;
-  max-width: 480px;
-  padding: 18px 24px;
-  background: rgba(10, 14, 20, 0.85);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(212, 175, 55, 0.35);
-  border-left: 4px solid var(--color-gold);
-  border-radius: var(--radius-md);
-  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.65);
-  pointer-events: none;
-  animation: caption-fade 0.5s ease;
-}
-
-@keyframes caption-fade {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.cinematic-scene-tag {
-  font-size: 0.7rem;
-  font-weight: 700;
-  color: var(--color-gold);
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  margin-bottom: 4px;
-}
-
-.cinematic-scene-title {
-  font-size: 1.3rem;
-  font-weight: 700;
-  color: #ffffff;
-  margin-bottom: 4px;
-  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
-}
-
-.cinematic-scene-desc {
-  font-size: 0.84rem;
-  color: rgba(235, 235, 235, 0.85);
-  line-height: 1.4;
-}
-
-/* Bottom Letterbox Controls */
-.cinematic-controls-bar {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 14px;
-  margin-bottom: 8px;
-}
-
-.cinematic-btn-round {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: #ffffff;
-  font-size: 0.85rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: var(--transition);
-}
-
-.cinematic-btn-round:hover {
-  background: rgba(212, 168, 67, 0.25);
-  border-color: var(--color-gold);
-  color: var(--color-gold-light);
-  transform: scale(1.08);
-}
-
-.cinematic-btn-round.main {
-  width: 44px;
-  height: 44px;
-  background: linear-gradient(135deg, rgba(212, 168, 67, 0.35) 0%, rgba(212, 168, 67, 0.15) 100%);
-  border-color: var(--color-gold);
-  color: #ffffff;
+.photo-tool-btn .tool-icon {
   font-size: 1.15rem;
+  line-height: 1;
 }
 
-.cinematic-btn-round.main:hover {
-  background: linear-gradient(135deg, rgba(212, 168, 67, 0.5) 0%, rgba(212, 168, 67, 0.25) 100%);
-  box-shadow: 0 0 16px rgba(212, 168, 67, 0.4);
+.photo-tool-btn .tool-label {
+  font-size: 0.6rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.85);
+  letter-spacing: 0.02em;
 }
 
-.cinematic-progress-container {
+/* Shutter Button (DSLR Lens Style) */
+.photo-shutter-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0 8px;
+  transition: transform 0.15s ease;
+}
+
+.photo-shutter-btn:active {
+  transform: scale(0.92);
+}
+
+.shutter-outer-ring {
+  width: 62px;
+  height: 62px;
+  border-radius: 50%;
+  border: 3px solid #ffffff;
+  padding: 3px;
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.shutter-inner-circle {
   width: 100%;
-  max-width: 520px;
-}
-
-.cinematic-progress-bar {
-  width: 100%;
-  height: 3px;
-  background: rgba(255, 255, 255, 0.15);
-  border-radius: 2px;
-  overflow: hidden;
-}
-
-.cinematic-progress-fill {
-  width: 0%;
   height: 100%;
-  background: linear-gradient(90deg, #d4af37, #ffe599);
-  transition: width 0.1s linear;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.4);
+  transition: all 0.15s ease;
+}
+
+.photo-shutter-btn:hover .shutter-outer-ring {
+  box-shadow: 0 0 25px rgba(239, 68, 68, 0.65);
+  border-color: #fca5a5;
+}
+
+.photo-shutter-btn:hover .shutter-inner-circle {
+  background: linear-gradient(135deg, #f87171 0%, #ef4444 100%);
+}
+
+.shutter-camera-icon {
+  font-size: 1.35rem;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+}
+
+.shutter-btn-label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* Toast feedback */
+.photo-toast {
+  position: absolute;
+  top: max(80px, calc(env(safe-area-inset-top) + 65px));
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 24px;
+  background: rgba(15, 23, 42, 0.95);
+  backdrop-filter: blur(20px);
+  border: 1px solid #38bdf8;
+  border-radius: 999px;
+  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.7);
+  color: #ffffff;
+  font-size: 0.88rem;
+  font-weight: 600;
+  z-index: 800;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.35s ease, transform 0.35s ease;
+}
+
+.photo-toast.show {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+.photo-toast.hidden {
+  opacity: 0;
+  transform: translate(-50%, -15px);
+}
+
+.photo-restore-hint {
+  position: absolute;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(10, 15, 26, 0.8);
+  backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 999px;
+  padding: 8px 20px;
+  font-size: 0.78rem;
+  color: #ffffff;
+  pointer-events: none;
+  animation: hint-fade 2.6s forwards ease;
+}
+
+@keyframes hint-fade {
+  0% { opacity: 0; transform: translate(-50%, 10px); }
+  15% { opacity: 1; transform: translate(-50%, 0); }
+  75% { opacity: 1; }
+  100% { opacity: 0; visibility: hidden; }
 }
 
 @media (max-width: 768px) {
-  #cinematic-caption-card {
-    left: 16px;
-    right: 16px;
-    bottom: 84px;
-    max-width: none;
-    padding: 12px 16px;
+  .photo-top-bar {
+    padding: max(10px, env(safe-area-inset-top)) max(14px, env(safe-area-inset-right)) 10px max(14px, env(safe-area-inset-left));
   }
 
-  .cinematic-scene-title {
-    font-size: 1.05rem;
+  .photo-badge-text .photo-mode-subtitle {
+    display: none;
   }
 
-  .cinematic-scene-desc {
-    font-size: 0.75rem;
+  .photo-badge {
+    padding: 6px 14px;
+  }
+
+  .photo-mode-title {
+    font-size: 0.78rem;
+  }
+
+  .btn-exit-photo {
+    padding: 7px 14px;
+    font-size: 0.78rem;
+  }
+
+  .photo-controls-pill {
+    gap: 10px;
+    padding: 6px 14px;
+  }
+
+  .photo-tool-btn {
+    width: 44px;
+    height: 44px;
+  }
+
+  .shutter-outer-ring {
+    width: 54px;
+    height: 54px;
   }
 }
 

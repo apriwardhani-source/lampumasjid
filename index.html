@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Masjid Al-Muhajirin — Visualisasi Lampu Hias 3D</title>
+  <meta name="description" content="Visualisasi 3D interaktif instalasi lampu hias dekoratif di sepanjang jalan Masjid Al-Muhajirin, Desa Karang Rejo." />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Noto+Kufi+Arabic:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/src/styles/main.css" />
+</head>
+<body>
+  <div id="app">
+    <canvas id="three-canvas"></canvas>
+
+    <!-- Loading Screen -->
+    <div id="loading-screen">
+      <div class="loading-content">
+        <div class="loading-mosque-icon">🕌</div>
+        <h1 class="loading-title">Masjid Al-Muhajirin</h1>
+        <p class="loading-subtitle">Visualisasi Lampu Hias Dekoratif</p>
+        <div class="loading-bar-container">
+          <div class="loading-bar" id="loading-bar"></div>
+        </div>
+        <p class="loading-text" id="loading-text">Memuat lingkungan 3D...</p>
+      </div>
+    </div>
+
+    <!-- UI Overlay -->
+    <div id="ui-overlay">
+      <!-- Top Bar -->
+      <header id="top-bar">
+        <div class="brand">
+          <span class="brand-icon">🕌</span>
+          <div class="brand-text">
+            <h1>Masjid Al-Muhajirin</h1>
+            <p>Visualisasi Lampu Hias Dekoratif — Desa Karang Rejo</p>
+          </div>
+        </div>
+        <div class="top-controls">
+          <button id="btn-day-night" class="btn-icon" title="Siang / Malam">
+            <span id="day-night-icon">🌙</span>
+          </button>
+          <button id="btn-fullscreen" class="btn-icon" title="Layar Penuh">⛶</button>
+        </div>
+      </header>
+
+      <!-- Camera Presets -->
+      <nav id="camera-presets">
+        <button class="preset-btn active" data-preset="overview" title="Tampilan Atas">
+          <span class="preset-icon">🗺️</span>
+          <span class="preset-label">Overview</span>
+        </button>
+        <button class="preset-btn" data-preset="approach" title="Tampilan Jalan">
+          <span class="preset-icon">🛣️</span>
+          <span class="preset-label">Jalan</span>
+        </button>
+        <button class="preset-btn" data-preset="gate" title="Gerbang Masuk">
+          <span class="preset-icon">🚪</span>
+          <span class="preset-label">Gerbang</span>
+        </button>
+        <button class="preset-btn" data-preset="roundabout" title="Bundaran">
+          <span class="preset-icon">🔄</span>
+          <span class="preset-label">Bundaran</span>
+        </button>
+        <button class="preset-btn" data-preset="mosque" title="Masjid">
+          <span class="preset-icon">🕌</span>
+          <span class="preset-label">Masjid</span>
+        </button>
+        <button class="preset-btn" data-preset="bridge" title="Jembatan Kayu & Sungai HUT RI">
+          <span class="preset-icon">🌉</span>
+          <span class="preset-label">Jembatan</span>
+        </button>
+        <button class="preset-btn btn-cinematic" id="btn-cinematic" title="Mulai Tur Sinematik">
+          <span class="preset-icon">🎬</span>
+          <span class="preset-label">Sinematik</span>
+        </button>
+        <button class="preset-btn btn-freewalk" id="btn-freewalk" title="Jelajah Bebas (Bisa Jalan Kaki Open World)">
+          <span class="preset-icon">🚶</span>
+          <span class="preset-label">Jalan Kaki</span>
+        </button>
+      </nav>
+
+      <!-- Side Controls -->
+      <aside id="side-controls">
+        <button id="btn-reset-camera" class="btn-icon-sm" title="Reset Kamera">↺</button>
+        <button id="btn-toggle-lights" class="btn-icon-sm" title="Toggle Lampu">💡</button>
+        <button id="btn-light-color" class="btn-icon-sm btn-color-cycle" title="Ganti Warna Lampu (Kuning, Putih, Hijau, dll)">🎨</button>
+        <button id="btn-animate-lights" class="btn-icon-sm" title="Animasi Lampu">✨</button>
+        <button id="btn-toggle-labels" class="btn-icon-sm" title="Toggle Label">🏷️</button>
+      </aside>
+
+      <!-- Color Palette Picker -->
+      <div id="color-palette-bar" class="color-palette-bar">
+        <button class="color-chip active" data-color="kuning" title="Kuning Hangat" style="--chip-color: #ffbe3b;">
+          <span class="color-chip-dot"></span>
+        </button>
+        <button class="color-chip" data-color="putih" title="Putih Bersih" style="--chip-color: #ffffff;">
+          <span class="color-chip-dot"></span>
+        </button>
+        <button class="color-chip" data-color="hijau" title="Hijau Islami" style="--chip-color: #22c55e;">
+          <span class="color-chip-dot"></span>
+        </button>
+        <button class="color-chip" data-color="biru" title="Biru Langit" style="--chip-color: #00d2ff;">
+          <span class="color-chip-dot"></span>
+        </button>
+        <button class="color-chip" data-color="amber" title="Jingga Amber" style="--chip-color: #ff7700;">
+          <span class="color-chip-dot"></span>
+        </button>
+        <button class="color-chip" data-color="ungu" title="Ungu Magis" style="--chip-color: #c084fc;">
+          <span class="color-chip-dot"></span>
+        </button>
+      </div>
+
+      <!-- Color Toast Notification -->
+      <div id="color-toast" class="color-toast hidden">
+        <span id="color-toast-icon">🟡</span>
+        <span id="color-toast-text">Warna Lampu: Kuning Hangat</span>
+      </div>
+
+      <!-- Info Panel -->
+      <div id="info-panel" class="hidden">
+        <button id="btn-close-info" class="btn-close">✕</button>
+        <h3 id="info-title"></h3>
+        <p id="info-desc"></p>
+      </div>
+
+      <!-- Cinematic Overlay (Letterbox Bars & Movie HUD) -->
+      <div id="cinematic-overlay" class="hidden">
+        <!-- Top Letterbox Bar -->
+        <div class="cinematic-letterbox top">
+          <div class="cinematic-badge">
+            <span class="rec-dot"></span>
+            <span class="rec-title">MODE SINEMATIK</span>
+            <span class="rec-timer" id="cinematic-timer">00:00</span>
+          </div>
+          <div class="cinematic-top-right">
+            <button id="cinematic-btn-speed" class="cinematic-btn-text" title="Ganti Kecepatan Tur">1.0x</button>
+            <button id="cinematic-btn-exit" class="cinematic-btn-icon" title="Keluar Mode Sinematik (Esc)">✕</button>
+          </div>
+        </div>
+
+        <!-- Center Subtitle / Chapter Card -->
+        <div id="cinematic-caption-card">
+          <div class="cinematic-scene-tag" id="cinematic-chapter-num">SCENE 01 / 06</div>
+          <h2 class="cinematic-scene-title" id="cinematic-chapter-title">Gerbang Masuk Utama</h2>
+          <p class="cinematic-scene-desc" id="cinematic-chapter-subtitle">Rangka Taso Baja Ringan (Placeholder Banner)</p>
+        </div>
+
+        <!-- Bottom Letterbox Bar -->
+        <div class="cinematic-letterbox bottom">
+          <div class="cinematic-controls-bar">
+            <button id="cinematic-btn-prev" class="cinematic-btn-round" title="Adegan Sebelumnya (Panah Kiri)">⏮</button>
+            <button id="cinematic-btn-play-pause" class="cinematic-btn-round main" title="Jeda / Lanjutkan (Spasi)">⏸</button>
+            <button id="cinematic-btn-next" class="cinematic-btn-round" title="Adegan Berikutnya (Panah Kanan)">⏭</button>
+          </div>
+          <div class="cinematic-progress-container">
+            <div class="cinematic-progress-bar">
+              <div class="cinematic-progress-fill" id="cinematic-progress-fill"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Free Walk / Open World Mobile & Desktop HUD -->
+      <div id="freewalk-hud" class="freewalk-hud hidden">
+        <!-- Top Status & Exit Header -->
+        <div class="freewalk-top-bar">
+          <div class="freewalk-badge">
+            <span class="walk-icon-pulse">🚶</span>
+            <div class="freewalk-badge-text">
+              <span class="walk-title">JELAJAH BEBAS</span>
+              <span class="walk-subtitle">Mode Open World 3D</span>
+            </div>
+          </div>
+          <button id="btn-exit-freewalk" class="btn-exit-freewalk" title="Kembali ke Kamera Biasa (Esc)">
+            <span class="exit-icon">✕</span>
+            <span>Kembali</span>
+          </button>
+        </div>
+
+        <!-- Desktop Controls Key Hint Bar -->
+        <div class="freewalk-desktop-hint">
+          <div class="hint-group"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd><span>Jalan</span></div>
+          <div class="hint-group"><kbd>Shift</kbd><span>Lari</span></div>
+          <div class="hint-group"><kbd>Spasi</kbd><span>Lompat</span></div>
+          <div class="hint-group"><kbd>Mouse</kbd><span>Tengok Bebas</span></div>
+        </div>
+
+        <!-- Mobile Touch Controls Zone -->
+        <div id="mobile-touch-zone" class="mobile-touch-zone">
+          <!-- Virtual Analog Joystick (Bottom-Left) -->
+          <div id="joystick-zone" class="joystick-zone">
+            <div id="joystick-base" class="joystick-base">
+              <div id="joystick-knob" class="joystick-knob">
+                <span class="knob-dot"></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Mobile Action Buttons (Bottom-Right) -->
+          <div class="mobile-action-buttons">
+            <button id="btn-mobile-sprint" class="mobile-action-btn btn-sprint" title="Lari Cepat">
+              <span class="action-icon">🏃</span>
+              <span class="action-label">Lari</span>
+            </button>
+            <button id="btn-mobile-jump" class="mobile-action-btn btn-jump" title="Lompat">
+              <span class="action-icon">⏫</span>
+              <span class="action-label">Lompat</span>
+            </button>
+          </div>
+
+          <!-- Look hint for mobile users -->
+          <div class="mobile-look-hint">
+            <span>👆 Usap layar kanan untuk tengok 360°</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom Info -->
+      <footer id="bottom-bar">
+        <p>Gunakan mouse untuk memutar • Scroll untuk zoom • Klik kanan untuk geser</p>
+      </footer>
+    </div>
+  </div>
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>

@@ -27,40 +27,11 @@ export class RoundaboutSystem {
     const rb = this.config.roundabout;
     const center = rb.center;
 
-    // 1. Asphalt road ring surrounding the roundabout
-    this.createRoadRing(center, rb);
-
-    // 2. Rural divider island with soil, curb & vegetation
+    // 1. Rural divider island with soil, concrete curb & vegetation
     this.createIsland(center, rb);
 
-    // 3. Iconic 3-Tier Giant Tire Monument (3 Ban Besar Ditumpuk)
+    // 2. Iconic 3-Tier Giant Tire Monument (3 Ban Besar Ditumpuk)
     this.createTireMonument(center);
-  }
-
-  createRoadRing(center, rb) {
-    const roadWidth = this.config.road.width;
-    const outerR = rb.outerRadius + roadWidth / 2;
-    const innerR = rb.outerRadius - roadWidth / 2;
-
-    const ringShape = new THREE.Shape();
-    ringShape.absarc(0, 0, outerR, 0, Math.PI * 2, false);
-
-    const hole = new THREE.Path();
-    hole.absarc(0, 0, innerR, 0, Math.PI * 2, true);
-    ringShape.holes.push(hole);
-
-    const ringGeo = new THREE.ShapeGeometry(ringShape, 48);
-    const roadMat = new THREE.MeshStandardMaterial({
-      color: this.config.road.surfaceColor,
-      roughness: 0.88,
-      metalness: 0.05,
-    });
-
-    const ring = new THREE.Mesh(ringGeo, roadMat);
-    ring.rotation.x = -Math.PI / 2;
-    ring.position.set(center.x, 0.015, center.z);
-    ring.receiveShadow = true;
-    this.scene.add(ring);
   }
 
   createIsland(center, rb) {

@@ -215,8 +215,7 @@ export class EnvironmentBuilder {
         // Avoid roads (within 6m of x=0 axis and z=0 axis near center)
         const onMainRoad = Math.abs(x) < 6 && z > -45 && z < 45;
         const onEastRoad = Math.abs(z) < 6 && x > -5 && x < 40;
-        const onMosque = x < -8 && x > -35 && z > -28 && z < -2;
-        const onRoundabout = Math.sqrt(x * x + z * z) < 10;
+        const onRoundabout = Math.hypot(x - 3.6, z) < 8.5;
         const onRiver = this.getRiverDistance(x, z) < 7.0;
         valid = !onMainRoad && !onEastRoad && !onMosque && !onRoundabout && !onRiver;
         attempts++;

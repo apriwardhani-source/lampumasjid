@@ -55,9 +55,9 @@ export class CinematicController {
         subtitle: 'Tumpukan 3 Ban Traktor Bercorak Merah-Putih Khas Banjar',
         duration: 7.0,
         path: [
-          { pos: { x: 1.5, y: 2.6, z: -5.0 }, target: { x: 0, y: 1.1, z: 0 } },
-          { pos: { x: 6.2, y: 3.0, z: 0.5 }, target: { x: 0, y: 1.1, z: 0 } },
-          { pos: { x: 4.2, y: 2.6, z: 5.5 }, target: { x: 0, y: 1.1, z: 0 } },
+          { pos: { x: 0.8, y: 2.2, z: 10.5 }, target: { x: 3.6, y: 1.2, z: 0 } },
+          { pos: { x: 8.5, y: 2.8, z: 5.5 }, target: { x: 3.6, y: 1.2, z: 0 } },
+          { pos: { x: 7.2, y: 2.5, z: -5.0 }, target: { x: 3.6, y: 1.2, z: 0 } },
         ],
       },
       {

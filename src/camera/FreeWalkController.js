@@ -482,9 +482,10 @@ export class FreeWalkController {
   // TERRAIN HEIGHT / STEP-UP DETECTION
   // ==========================================
   getGroundHeight(x, z) {
-    // 1. Roundabout island mound (Center at 0, 0, radius ~3.0m)
-    const rbDist = Math.hypot(x, z);
-    if (rbDist < 3.1) {
+    // 1. Roundabout island mound (Center at roundabout.center, radius ~2.1m)
+    const rbCenter = this.config.roundabout.center;
+    const rbDist = Math.hypot(x - rbCenter.x, z - rbCenter.z);
+    if (rbDist < 2.1) {
       return 0.22;
     }
 

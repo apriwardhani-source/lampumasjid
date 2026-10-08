@@ -27,7 +27,10 @@ export class RoadSystem {
     // 2. East road
     this.createRoadSegment(layout.roads.eastRoad, roadCfg.width, 'east-road');
 
-    // 3. Wide unpaved shoulder, drainage ditch, and mosque courtyard paving
+    // 3. Seamless 3-way Y-junction roundabout intersection apron & curved outer curbs
+    this.createIntersectionApron();
+
+    // 4. Wide unpaved shoulder, drainage ditch, and mosque courtyard paving
     this.createRoadsideShoulderAndDitch();
   }
 
@@ -40,6 +43,12 @@ export class RoadSystem {
 
       // Skip road asphalt and curbs on the bridge span (z = 44 to 56) since BridgeRiverSystem builds the wooden bridge deck!
       if (start.z >= 43 && end.z <= 57 && name === 'main-road') {
+        continue;
+      }
+
+      // Skip the 3-way roundabout intersection area (z = -10 to 10 on main-road)
+      // because createIntersectionApron builds the authentic fork junction seamlessly!
+      if (start.z <= -8 && end.z >= 8 && name === 'main-road') {
         continue;
       }
 
@@ -312,6 +321,132 @@ export class RoadSystem {
       blade.rotation.x = (Math.random() - 0.5) * 0.35;
       blade.rotation.z = (Math.random() - 0.5) * 0.35;
       this.scene.add(blade);
+    }
+  }
+
+  /**
+   * Authentic 3-Way Y-Junction & Roundabout Apron (Simpang Tiga Bundaran Pulau Jalan).
+   * Faithful to Google Street View reference photo and aerial layout:
+   *  - Continuous flat asphalt connecting North Road, South Road, and East Road.
+   *  - Straight 5.1m - 6.0m wide lane past the front of the mosque on the west.
+   *  - Circular hole for the 3-tier giant tire monument island at (3.6, 0).
+   *  - Smooth curved outer curbs for South-East and North-East corner turns.
+   *  - Straight west curb along the mosque roadside shoulder.
+   *  - Zero curbs obstructing driving lanes or colliding with the tire monument!
+   */
+  createIntersectionApron() {
+    const roadCfg = this.config.road;
+    const curbW = roadCfg.curbWidth;   // 0.3m
+    const curbH = roadCfg.curbHeight;  // 0.15m
+    const rbCfg = this.config.roundabout;
+    const islandCenter = rbCfg.center; // { x: 3.6, z: 0 }
+    const islandR = rbCfg.innerRadius; // 2.0m
+
+    // Boundary alignment with connecting road edges:
+    // Main road has centerline x = -0.5, width = 6.0m:
+    // Left edge = -0.5 - 3.0 = -3.5m
+    // Right edge = -0.5 + 3.0 = +2.5m
+    const westX = -3.5;
+    const northZ = -10.0;
+    const southZ = 10.0;
+    const northRightX = 2.5;
+    const southRightX = 2.5;
+
+    // East road has centerline z = 0, width = 6.0m:
+    // North edge = -3.0m, South edge = +3.0m, starts at x = 9.5m
+    const eastX = 9.5;
+    const eastNorthZ = -3.0;
+    const eastSouthZ = 3.0;
+
+    // 1. Unified Asphalt Mesh (2D Shape lay flat on XZ plane)
+    // In Three.js ShapeGeometry: X maps to 3D X, Y maps to 3D -Z with rotateX(-Math.PI / 2)
+    // Points defined in Counter-Clockwise (CCW) order:
+    const shape = new THREE.Shape();
+    shape.moveTo(westX, -northZ);               // (-3.5, 10)
+    shape.lineTo(westX, -southZ);               // (-3.5, -10)
+    shape.lineTo(southRightX, -southZ);         // (2.5, -10)
+    // South-East outer corner smooth fillet curve
+    shape.quadraticCurveTo(southRightX, -eastSouthZ, eastX, -eastSouthZ); // to (9.5, -3)
+    shape.lineTo(eastX, -eastNorthZ);           // (9.5, 3)
+    // North-East outer corner smooth fillet curve
+    shape.quadraticCurveTo(northRightX, -eastNorthZ, northRightX, -northZ); // to (2.5, 10)
+    shape.lineTo(westX, -northZ);               // (-3.5, 10)
+
+    // Hole for the central island
+    const hole = new THREE.Path();
+    hole.absarc(islandCenter.x, -islandCenter.z, islandR, 0, Math.PI * 2, true);
+    shape.holes.push(hole);
+
+    const apronGeo = new THREE.ShapeGeometry(shape, 36);
+    apronGeo.rotateX(-Math.PI / 2);
+
+    const roadMat = new THREE.MeshStandardMaterial({
+      color: roadCfg.surfaceColor,
+      roughness: 0.85,
+      metalness: 0.0,
+      side: THREE.DoubleSide,
+    });
+
+    const apron = new THREE.Mesh(apronGeo, roadMat);
+    apron.position.y = 0.01;
+    apron.receiveShadow = true;
+    apron.name = 'intersection-apron';
+    this.scene.add(apron);
+
+    // 2. Concrete Curbs
+    const curbMat = new THREE.MeshStandardMaterial({
+      color: 0x727b87,
+      roughness: 0.7,
+    });
+
+    // A. West straight curb (along mosque front shoulder, z = -10 to 10)
+    const westCurbLength = southZ - northZ; // 20m
+    const westCurbGeo = new THREE.BoxGeometry(curbW, curbH, westCurbLength);
+    const westCurb = new THREE.Mesh(westCurbGeo, curbMat);
+    westCurb.position.set(westX - curbW / 2, curbH / 2, (northZ + southZ) / 2);
+    westCurb.receiveShadow = true;
+    westCurb.castShadow = true;
+    this.scene.add(westCurb);
+
+    // B. South-East outer corner curved curb (from z=10, x=2.5+curbW/2 to x=9.5, z=3.0+curbW/2)
+    const seCurve = new THREE.QuadraticBezierCurve3(
+      new THREE.Vector3(southRightX + curbW / 2, 0, southZ),
+      new THREE.Vector3(southRightX + curbW / 2, 0, eastSouthZ + curbW / 2),
+      new THREE.Vector3(eastX, 0, eastSouthZ + curbW / 2)
+    );
+    this.createCurvedCurbFromCurve(seCurve, curbMat, curbW, curbH);
+
+    // C. North-East outer corner curved curb (from x=9.5, z=-3.0-curbW/2 to z=-10, x=2.5+curbW/2)
+    const neCurve = new THREE.QuadraticBezierCurve3(
+      new THREE.Vector3(eastX, 0, eastNorthZ - curbW / 2),
+      new THREE.Vector3(northRightX + curbW / 2, 0, eastNorthZ - curbW / 2),
+      new THREE.Vector3(northRightX + curbW / 2, 0, northZ)
+    );
+    this.createCurvedCurbFromCurve(neCurve, curbMat, curbW, curbH);
+  }
+
+  createCurvedCurbFromCurve(curve, material, curbW, curbH) {
+    const segments = 24;
+    for (let i = 0; i < segments; i++) {
+      const t1 = i / segments;
+      const t2 = (i + 1) / segments;
+      const p1 = curve.getPoint(t1);
+      const p2 = curve.getPoint(t2);
+
+      const dx = p2.x - p1.x;
+      const dz = p2.z - p1.z;
+      const len = Math.hypot(dx, dz);
+      const angle = Math.atan2(dx, dz);
+      const cx = (p1.x + p2.x) / 2;
+      const cz = (p1.z + p2.z) / 2;
+
+      const segGeo = new THREE.BoxGeometry(curbW, curbH, len + 0.03);
+      const segMesh = new THREE.Mesh(segGeo, material);
+      segMesh.rotation.y = angle;
+      segMesh.position.set(cx, curbH / 2, cz);
+      segMesh.receiveShadow = true;
+      segMesh.castShadow = true;
+      this.scene.add(segMesh);
     }
   }
 }

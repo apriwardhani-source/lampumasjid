@@ -39,7 +39,7 @@ export const siteConfig = {
   // ROAD SYSTEM
   // ========================
   road: {
-    width: 7.0,           // Road width (meters)
+    width: 6.0,           // Road width (meters)
     surfaceColor: 0x363d48, // Rich dark asphalt grey (not pitch black)
     curbHeight: 0.15,
     curbWidth: 0.3,
@@ -50,10 +50,10 @@ export const siteConfig = {
   // ROUNDABOUT
   // ========================
   roundabout: {
-    center: { x: 0, z: 0 },      // Center position
-    outerRadius: 5.5,              // Outer radius of roundabout
-    innerRadius: 3.0,              // Inner island radius
-    archCount: 6,                  // Number of arches around roundabout
+    center: { x: 3.6, z: 0 },      // Center of 3-tier tire island at the triangular fork
+    outerRadius: 5.2,              // Outer clearance radius
+    innerRadius: 2.0,              // Inner island radius
+    archCount: 0,                  // Arches removed
   },
 
   // ========================
@@ -121,8 +121,8 @@ export const siteConfig = {
       target: { x: 0, y: 3.8, z: -35.0 },
     },
     roundabout: {
-      position: { x: 5.8, y: 2.8, z: 5.8 },
-      target: { x: 0, y: 1.1, z: 0 },
+      position: { x: 0.5, y: 1.8, z: 12.0 },
+      target: { x: 2.2, y: 1.3, z: -1.0 },
     },
     mosque: {
       position: { x: -2.0, y: 3.2, z: -13.0 },
@@ -170,22 +170,20 @@ export const siteConfig = {
     roads: {
       // Main road: North-South
       mainRoad: [
-        { x: 0, z: -40 },   // North end (gate)
-        { x: 0, z: -25 },   // North section
-        { x: 0, z: -10 },   // Approaching roundabout
-        { x: 0, z: 0 },     // Roundabout center
-        { x: 0, z: 10 },    // South of roundabout
-        { x: 0, z: 25 },    // South section
-        { x: 0, z: 44 },    // North bridge approach
-        { x: 0, z: 56 },    // South bridge exit
-        { x: 0, z: 75 },    // Countryside road continuation
+        { x: -0.5, z: -40 },   // North end (gate)
+        { x: -0.5, z: -25 },   // North section
+        { x: -0.5, z: -10 },   // Approaching roundabout (North boundary of intersection)
+        { x: -0.5, z: 10 },    // South boundary of intersection (gap from -10 to 10 built by intersection apron)
+        { x: -0.5, z: 25 },    // South section
+        { x: -0.5, z: 44 },    // North bridge approach
+        { x: -0.5, z: 56 },    // South bridge exit
+        { x: -0.5, z: 75 },    // Countryside road continuation
       ],
       // East road: branches from roundabout to the east
       eastRoad: [
-        { x: 0, z: 0 },     // Roundabout center
-        { x: 10, z: 0 },
+        { x: 9.5, z: 0 },      // East junction entrance
         { x: 20, z: 0 },
-        { x: 42, z: 0 },    // East end
+        { x: 42, z: 0 },       // East end
       ],
     },
 
@@ -198,20 +196,19 @@ export const siteConfig = {
         { z: -20, type: 'arch' },       // Arch 3
         { z: -15, type: 'arch' },       // Arch 2
         { z: -10, type: 'arch' },       // Arch 1
-        // roundabout area skipped
-        { z: 10, type: 'arch' },        // Arch 1
-        { z: 15, type: 'arch' },        // Arch 2
-        { z: 20, type: 'arch' },        // Arch 3
-        { z: 25, type: 'arch' },        // Arch 4
-        { z: 30, type: 'arch' },        // Arch 5
-        { z: 35, type: 'gate' },        // South gate
+        // roundabout area skipped: z = -10 to 12 is clear
+        { z: 14, type: 'arch' },        // Arch 1
+        { z: 19, type: 'arch' },        // Arch 2
+        { z: 24, type: 'arch' },        // Arch 3
+        { z: 29, type: 'arch' },        // Arch 4
+        { z: 34, type: 'arch' },        // Arch 5
+        { z: 40, type: 'gate' },        // South gate / bridge approach
       ],
       eastRoad: [
-        { x: 8, type: 'arch' },         // Arch 1
-        { x: 14, type: 'arch' },        // Arch 2
-        { x: 20, type: 'arch' },        // Arch 3
-        { x: 26, type: 'arch' },        // Arch 4
-        { x: 32, type: 'arch' },        // Arch 5
+        { x: 14, type: 'arch' },        // Arch 1
+        { x: 20, type: 'arch' },        // Arch 2
+        { x: 26, type: 'arch' },        // Arch 3
+        { x: 32, type: 'arch' },        // Arch 4
         { x: 38, type: 'gate' },        // East gate
       ],
     },

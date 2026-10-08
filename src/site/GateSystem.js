@@ -69,7 +69,7 @@ export class GateSystem {
     });
 
     // 2. Banner textures: Clean "NANTI DI KASIH BANER" placeholders
-    const topBannerTex = this.generatePlaceholderBannerTexture(2048, 512, false);
+    const topBannerTex = this.generateArchedBannerTexture(2048, 768);
     const sideBannerTex = this.generatePlaceholderBannerTexture(512, 1536, true);
 
     // 3. Banner materials (frontlit flex vinyl)
@@ -77,6 +77,7 @@ export class GateSystem {
       map: topBannerTex,
       roughness: 0.38,
       metalness: 0.02,
+      side: THREE.DoubleSide,
     });
 
     const bannerSideMat = new THREE.MeshStandardMaterial({
@@ -103,13 +104,26 @@ export class GateSystem {
     const mats = this.materials;
 
     // Dimensions
-    const halfWidth = 4.3;       // Centerline of columns (span ~8.6m across 7m road)
+    const halfWidth = 4.3;       // Centerline of columns (span ~8.6m across road)
     const colWidth = 0.85;       // Column outer width (X)
     const colDepth = 0.70;       // Column outer depth (Z)
-    const clearanceY = 4.8;      // Headroom clearance under top banner
-    const bannerHeight = 1.6;    // Top banner height (from y = 4.8 to 6.4)
-    const topGirderY = clearanceY + bannerHeight; // 6.4m
-    const roofApexY = 7.3;       // Apex of decorative taso pitched truss
+    const spanWidth = halfWidth * 2 + colWidth;  // 9.45m outer span
+    const clearWidth = halfWidth * 2 - colWidth; // 7.75m inner opening
+
+    const xOuterLeft = -spanWidth / 2;           // -4.725m
+    const xOuterRight = spanWidth / 2;           // +4.725m
+    const xInnerLeft = -clearWidth / 2;          // -3.875m
+    const xInnerRight = clearWidth / 2;          // +3.875m
+
+    // Height profiles
+    const yPedestal = 0.42;        // Top of concrete foot pedestal
+    const yArchStart = 4.65;       // Start of arch (top of vertical column banners)
+    const yShoulder = 6.00;        // Outer top shoulder of arch
+    const yTopApex = 7.45;         // Upper crown apex of arch
+    const yClearanceSide = 4.65;   // Headroom clearance at inner columns
+    const yClearanceCenter = 5.15; // Headroom clearance at road center
+
+    const zOffset = colDepth / 2 + 0.015;
 
     // ============================================================
     // 1. LEFT & RIGHT COLUMNS (TASO BAJA RINGAN BOX TRUSS TOWERS)
@@ -128,12 +142,12 @@ export class GateSystem {
       // Steel anchor base plate
       const plateGeo = new THREE.BoxGeometry(colWidth + 0.1, 0.04, colDepth + 0.1);
       const plate = new THREE.Mesh(plateGeo, mats.tasoDark);
-      plate.position.set(colX, 0.42, 0);
+      plate.position.set(colX, yPedestal, 0);
       group.add(plate);
 
-      // 4 Vertical Taso C-channel Chords per column tower
+      // 4 Vertical Taso C-channel Chords per column tower up to yShoulder
       const postRadius = 0.045;
-      const postH = topGirderY - 0.4;
+      const postH = yShoulder - yPedestal;
       const cornerOffsets = [
         { dx: -colWidth / 2 + 0.05, dz: -colDepth / 2 + 0.05 },
         { dx: colWidth / 2 - 0.05, dz: -colDepth / 2 + 0.05 },
@@ -144,18 +158,18 @@ export class GateSystem {
       cornerOffsets.forEach(pt => {
         const chordGeo = new THREE.BoxGeometry(postRadius * 2, postH, postRadius * 2);
         const chord = new THREE.Mesh(chordGeo, mats.taso);
-        chord.position.set(colX + pt.dx, 0.4 + postH / 2, pt.dz);
+        chord.position.set(colX + pt.dx, yPedestal + postH / 2, pt.dz);
         chord.castShadow = true;
         group.add(chord);
       });
 
-      // Horizontal taso battens (reng / C-channel rings) every 0.6m
+      // Horizontal taso ring ties every 0.6m
       const rings = Math.floor(postH / 0.6);
       for (let r = 1; r <= rings; r++) {
-        const ry = 0.4 + r * 0.6;
-        if (ry > topGirderY) break;
+        const ry = yPedestal + r * 0.6;
+        if (ry > yShoulder) break;
 
-        // Front & Back ring ties
+        // Front & Back ties
         [-1, 1].forEach(signZ => {
           const tieGeo = new THREE.BoxGeometry(colWidth, 0.05, 0.035);
           const tie = new THREE.Mesh(tieGeo, mats.taso);
@@ -163,7 +177,7 @@ export class GateSystem {
           group.add(tie);
         });
 
-        // Left & Right ring ties
+        // Left & Right ties
         [-1, 1].forEach(signX => {
           const tieGeo = new THREE.BoxGeometry(0.035, 0.05, colDepth);
           const tie = new THREE.Mesh(tieGeo, mats.taso);
@@ -172,9 +186,9 @@ export class GateSystem {
         });
       }
 
-      // Diagonal Taso Webbing on Column Inner Faces (facing road)
+      // Diagonal Taso Webbing on inner column faces
       for (let r = 0; r < rings - 1; r++) {
-        const y1 = 0.4 + r * 0.6;
+        const y1 = yPedestal + r * 0.6;
         const y2 = y1 + 0.6;
         const innerX = colX - side * (colWidth / 2 - 0.03);
         const diagLen = Math.sqrt(colDepth * colDepth + 0.36);
@@ -188,145 +202,176 @@ export class GateSystem {
       }
     });
 
-    // ============================================================
-    // 2. OVERHEAD GIRDER / LINTEL TRUSS (TASO BAJA RINGAN)
-    // ============================================================
-    const spanWidth = halfWidth * 2 + colWidth;
+    // Helper mathematical functions for smooth cosine arch curves
+    const getTopArchY = (curX) => {
+      const normX = Math.max(-1, Math.min(1, curX / (spanWidth / 2)));
+      return yShoulder + (yTopApex - yShoulder) * Math.cos(normX * Math.PI * 0.5);
+    };
 
-    // Lower Horizontal Chords (y = clearanceY)
+    const getBottomArchY = (curX) => {
+      const normX = Math.max(-1, Math.min(1, curX / (clearWidth / 2)));
+      return yClearanceSide + (yClearanceCenter - yClearanceSide) * Math.cos(normX * Math.PI * 0.5);
+    };
+
+    // ============================================================
+    // 2. ROUNDED ARCH BANNER (FRONT & BACK 2D SHAPE WITH MATS)
+    // ============================================================
+    const bannerShape = new THREE.Shape();
+    bannerShape.moveTo(xOuterLeft, yArchStart);
+    bannerShape.lineTo(xOuterLeft, yShoulder);
+
+    // Sample upper arch contour
+    const topSteps = 32;
+    for (let i = 1; i < topSteps; i++) {
+      const t = i / topSteps;
+      const curX = xOuterLeft + t * spanWidth;
+      bannerShape.lineTo(curX, getTopArchY(curX));
+    }
+    bannerShape.lineTo(xOuterRight, yShoulder);
+    bannerShape.lineTo(xOuterRight, yArchStart);
+    bannerShape.lineTo(xInnerRight, yArchStart);
+
+    // Sample inner underpass arch contour
+    const botSteps = 24;
+    for (let i = botSteps - 1; i >= 1; i--) {
+      const t = i / botSteps;
+      const curX = xInnerLeft + t * clearWidth;
+      bannerShape.lineTo(curX, getBottomArchY(curX));
+    }
+    bannerShape.lineTo(xInnerLeft, yArchStart);
+    bannerShape.closePath();
+
+    const bannerGeo = new THREE.ShapeGeometry(bannerShape, 32);
+
+    // Front Arched Banner Face
+    const bannerFront = new THREE.Mesh(bannerGeo, mats.bannerTop);
+    bannerFront.position.set(0, 0, zOffset);
+    bannerFront.castShadow = true;
+    bannerFront.receiveShadow = true;
+    group.add(bannerFront);
+
+    // Back Arched Banner Face
+    const bannerBack = new THREE.Mesh(bannerGeo, mats.bannerTop);
+    bannerBack.position.set(0, 0, -zOffset);
+    bannerBack.rotation.y = Math.PI;
+    bannerBack.castShadow = true;
+    bannerBack.receiveShadow = true;
+    group.add(bannerBack);
+
+    // ============================================================
+    // 3. ARCHED TASO TRUSS FRAMEWORK, CAPPING & SOFFIT
+    // ============================================================
+    const zChordFront = colDepth / 2 - 0.05;
+
+    // A. Upper & Lower Curved Taso Chords
     [-1, 1].forEach(signZ => {
-      const chordGeo = new THREE.BoxGeometry(spanWidth, 0.075, 0.075);
-      const chord = new THREE.Mesh(chordGeo, mats.taso);
-      chord.position.set(0, clearanceY, signZ * (colDepth / 2 - 0.05));
-      chord.castShadow = true;
-      group.add(chord);
+      const zPos = signZ * zChordFront;
+
+      // Upper chords
+      for (let i = 0; i < topSteps; i++) {
+        const x1 = xOuterLeft + (i / topSteps) * spanWidth;
+        const x2 = xOuterLeft + ((i + 1) / topSteps) * spanWidth;
+        const y1 = (i === 0) ? yShoulder : getTopArchY(x1);
+        const y2 = (i === topSteps - 1) ? yShoulder : getTopArchY(x2);
+
+        const dx = x2 - x1;
+        const dy = y2 - y1;
+        const len = Math.hypot(dx, dy);
+        const ang = Math.atan2(dy, dx);
+
+        const segGeo = new THREE.BoxGeometry(len, 0.06, 0.06);
+        const seg = new THREE.Mesh(segGeo, mats.taso);
+        seg.position.set((x1 + x2) / 2, (y1 + y2) / 2, zPos);
+        seg.rotation.z = ang;
+        group.add(seg);
+      }
+
+      // Lower underpass chords
+      for (let i = 0; i < botSteps; i++) {
+        const x1 = xInnerLeft + (i / botSteps) * clearWidth;
+        const x2 = xInnerLeft + ((i + 1) / botSteps) * clearWidth;
+        const y1 = getBottomArchY(x1);
+        const y2 = getBottomArchY(x2);
+
+        const dx = x2 - x1;
+        const dy = y2 - y1;
+        const len = Math.hypot(dx, dy);
+        const ang = Math.atan2(dy, dx);
+
+        const segGeo = new THREE.BoxGeometry(len, 0.06, 0.06);
+        const seg = new THREE.Mesh(segGeo, mats.taso);
+        seg.position.set((x1 + x2) / 2, (y1 + y2) / 2, zPos);
+        seg.rotation.z = ang;
+        group.add(seg);
+      }
     });
 
-    // Upper Horizontal Chords (y = topGirderY)
-    [-1, 1].forEach(signZ => {
-      const chordGeo = new THREE.BoxGeometry(spanWidth, 0.075, 0.075);
-      const chord = new THREE.Mesh(chordGeo, mats.taso);
-      chord.position.set(0, topGirderY, signZ * (colDepth / 2 - 0.05));
-      chord.castShadow = true;
-      group.add(chord);
-    });
+    // B. Vertical Taso Webbing Studs & Spacers
+    const studXs = [-3.8, -2.85, -1.9, -0.95, 0, 0.95, 1.9, 2.85, 3.8];
+    studXs.forEach(sx => {
+      const yBot = (Math.abs(sx) <= clearWidth / 2) ? getBottomArchY(sx) : yArchStart;
+      const yTop = getTopArchY(sx);
+      const studH = yTop - yBot;
 
-    // Vertical Taso Studs across girder every 0.9m
-    const studCount = Math.floor(spanWidth / 0.9);
-    for (let i = 0; i <= studCount; i++) {
-      const sx = -spanWidth / 2 + i * (spanWidth / studCount);
       [-1, 1].forEach(signZ => {
-        const studGeo = new THREE.BoxGeometry(0.05, bannerHeight, 0.05);
+        const studGeo = new THREE.BoxGeometry(0.05, studH, 0.05);
         const stud = new THREE.Mesh(studGeo, mats.taso);
-        stud.position.set(sx, clearanceY + bannerHeight / 2, signZ * (colDepth / 2 - 0.05));
+        stud.position.set(sx, yBot + studH / 2, signZ * zChordFront);
         group.add(stud);
       });
 
-      // Cross spacer between front and back chords
+      // Cross spacer between front and back
       const spacerGeo = new THREE.BoxGeometry(0.04, 0.04, colDepth - 0.1);
-      const spacer1 = new THREE.Mesh(spacerGeo, mats.taso);
-      spacer1.position.set(sx, clearanceY, 0);
-      group.add(spacer1);
+      const spacerMid = new THREE.Mesh(spacerGeo, mats.taso);
+      spacerMid.position.set(sx, (yBot + yTop) / 2, 0);
+      group.add(spacerMid);
+    });
 
-      const spacer2 = new THREE.Mesh(spacerGeo, mats.taso);
-      spacer2.position.set(sx, topGirderY, 0);
-      group.add(spacer2);
+    // C. Curved Galvalum Roof Capping Strip (Along Top Arch)
+    const capWidth = colDepth + 0.04;
+    for (let i = 0; i < topSteps; i++) {
+      const x1 = xOuterLeft + (i / topSteps) * spanWidth;
+      const x2 = xOuterLeft + ((i + 1) / topSteps) * spanWidth;
+      const y1 = (i === 0) ? yShoulder : getTopArchY(x1);
+      const y2 = (i === topSteps - 1) ? yShoulder : getTopArchY(x2);
+
+      const dx = x2 - x1;
+      const dy = y2 - y1;
+      const len = Math.hypot(dx, dy);
+      const ang = Math.atan2(dy, dx);
+
+      const capGeo = new THREE.BoxGeometry(len + 0.02, 0.035, capWidth);
+      const cap = new THREE.Mesh(capGeo, mats.tasoDark);
+      cap.position.set((x1 + x2) / 2, (y1 + y2) / 2 + 0.015, 0);
+      cap.rotation.z = ang;
+      group.add(cap);
+    }
+
+    // D. Curved Soffit Strip (Along Bottom Underpass Arch)
+    for (let i = 0; i < botSteps; i++) {
+      const x1 = xInnerLeft + (i / botSteps) * clearWidth;
+      const x2 = xInnerLeft + ((i + 1) / botSteps) * clearWidth;
+      const y1 = getBottomArchY(x1);
+      const y2 = getBottomArchY(x2);
+
+      const dx = x2 - x1;
+      const dy = y2 - y1;
+      const len = Math.hypot(dx, dy);
+      const ang = Math.atan2(dy, dx);
+
+      const sofGeo = new THREE.BoxGeometry(len + 0.02, 0.03, colDepth - 0.02);
+      const sof = new THREE.Mesh(sofGeo, mats.taso);
+      sof.position.set((x1 + x2) / 2, (y1 + y2) / 2 - 0.015, 0);
+      sof.rotation.z = ang;
+      group.add(sof);
     }
 
     // ============================================================
-    // 3. DECORATIVE PITCHED CROWN / GABLE TRUSS (TASO ROOF FRAME)
+    // 4. VERTICAL COLUMN BANNERS (LEFT & RIGHT COLUMNS)
     // ============================================================
-    const apexX = 0;
-    const apexY = roofApexY;
-    const rafterLen = Math.hypot(spanWidth / 2, apexY - topGirderY);
-    const rafterAngle = Math.atan2(apexY - topGirderY, spanWidth / 2);
-
-    [-1, 1].forEach(signZ => {
-      const zPos = signZ * (colDepth / 2 - 0.05);
-
-      // Left rafter
-      const rLeftGeo = new THREE.BoxGeometry(rafterLen, 0.06, 0.06);
-      const rLeft = new THREE.Mesh(rLeftGeo, mats.taso);
-      rLeft.position.set(-spanWidth / 4, (topGirderY + apexY) / 2, zPos);
-      rLeft.rotation.z = rafterAngle;
-      group.add(rLeft);
-
-      // Right rafter
-      const rRightGeo = new THREE.BoxGeometry(rafterLen, 0.06, 0.06);
-      const rRight = new THREE.Mesh(rRightGeo, mats.taso);
-      rRight.position.set(spanWidth / 4, (topGirderY + apexY) / 2, zPos);
-      rRight.rotation.z = -rafterAngle;
-      group.add(rRight);
-
-      // Center king post
-      const kingGeo = new THREE.BoxGeometry(0.06, apexY - topGirderY, 0.06);
-      const king = new THREE.Mesh(kingGeo, mats.taso);
-      king.position.set(0, (topGirderY + apexY) / 2, zPos);
-      group.add(king);
-
-      // Web struts inside gable
-      [-0.5, 0.5].forEach(frac => {
-        const wx = (spanWidth / 2) * frac;
-        const wy = topGirderY + (apexY - topGirderY) * (1 - Math.abs(frac));
-        const strutGeo = new THREE.BoxGeometry(0.045, wy - topGirderY, 0.045);
-        const strut = new THREE.Mesh(strutGeo, mats.taso);
-        strut.position.set(wx, (topGirderY + wy) / 2, zPos);
-        group.add(strut);
-      });
-    });
-
-    // Ridge bar connecting front and back apex
-    const ridgeGeo = new THREE.BoxGeometry(0.07, 0.07, colDepth);
-    const ridge = new THREE.Mesh(ridgeGeo, mats.taso);
-    ridge.position.set(0, apexY, 0);
-    group.add(ridge);
-
-    // ============================================================
-    // 4. BANNER CLADDING: "NANTI DI KASIH BANER" PLACEHOLDERS
-    // ============================================================
-    const bannerTopW = spanWidth - 0.05;
-    const bannerTopH = bannerHeight;
-    const topBannerCenterY = clearanceY + bannerHeight / 2;
-    const zOffset = colDepth / 2 + 0.015;
-
-    // A. TOP BANNER (FRONT — Facing +Z)
-    const topBannerFrontGeo = new THREE.PlaneGeometry(bannerTopW, bannerTopH);
-    const topBannerFront = new THREE.Mesh(topBannerFrontGeo, mats.bannerTop);
-    topBannerFront.position.set(0, topBannerCenterY, zOffset);
-    group.add(topBannerFront);
-
-    // B. TOP BANNER (BACK — Facing -Z)
-    const topBannerBackGeo = new THREE.PlaneGeometry(bannerTopW, bannerTopH);
-    const topBannerBack = new THREE.Mesh(topBannerBackGeo, mats.bannerTop);
-    topBannerBack.position.set(0, topBannerCenterY, -zOffset);
-    topBannerBack.rotation.y = Math.PI;
-    group.add(topBannerBack);
-
-    // Top banner taso edge frames (holding banner taut)
-    [-1, 1].forEach(signZ => {
-      const zFrame = signZ * (zOffset + 0.015);
-
-      // Horizontal frame bars (top & bottom)
-      [topBannerCenterY - bannerTopH / 2, topBannerCenterY + bannerTopH / 2].forEach(fy => {
-        const frameGeo = new THREE.BoxGeometry(bannerTopW + 0.08, 0.04, 0.03);
-        const frame = new THREE.Mesh(frameGeo, mats.tasoDark);
-        frame.position.set(0, fy, zFrame);
-        group.add(frame);
-      });
-
-      // Vertical side frame bars
-      [-bannerTopW / 2, bannerTopW / 2].forEach(fx => {
-        const frameGeo = new THREE.BoxGeometry(0.04, bannerTopH + 0.04, 0.03);
-        const frame = new THREE.Mesh(frameGeo, mats.tasoDark);
-        frame.position.set(fx, topBannerCenterY, zFrame);
-        group.add(frame);
-      });
-    });
-
-    // C. SIDE BANNERS (LEFT & RIGHT COLUMNS)
     const sideBannerW = colWidth - 0.05;
-    const sideBannerH = clearanceY - 0.45; // From concrete foot (y=0.42) up to lintel (y=4.8)
-    const sideBannerCenterY = 0.42 + sideBannerH / 2;
+    const sideBannerH = yArchStart - yPedestal; // From pedestal (y=0.42) to arch start (y=4.65)
+    const sideBannerCenterY = yPedestal + sideBannerH / 2;
 
     [-1, 1].forEach(side => {
       const colX = side * halfWidth;
@@ -335,6 +380,7 @@ export class GateSystem {
       const sFrontGeo = new THREE.PlaneGeometry(sideBannerW, sideBannerH);
       const sFront = new THREE.Mesh(sFrontGeo, mats.bannerSide);
       sFront.position.set(colX, sideBannerCenterY, zOffset);
+      sFront.castShadow = true;
       group.add(sFront);
 
       // Back Face Banner
@@ -342,14 +388,16 @@ export class GateSystem {
       const sBack = new THREE.Mesh(sBackGeo, mats.bannerSide);
       sBack.position.set(colX, sideBannerCenterY, -zOffset);
       sBack.rotation.y = Math.PI;
+      sBack.castShadow = true;
       group.add(sBack);
 
-      // Outer Side Face Banner (Facing outward away from road)
+      // Outer Side Face Banner
       const outerX = colX + side * (colWidth / 2 + 0.015);
       const sOuterGeo = new THREE.PlaneGeometry(colDepth - 0.05, sideBannerH);
       const sOuter = new THREE.Mesh(sOuterGeo, mats.bannerSide);
       sOuter.position.set(outerX, sideBannerCenterY, 0);
       sOuter.rotation.y = side * Math.PI / 2;
+      sOuter.castShadow = true;
       group.add(sOuter);
 
       // Perimeter taso frames around column banner faces
@@ -382,6 +430,118 @@ export class GateSystem {
   // ============================================================
   // CLEAN PLACEHOLDER TEXTURE GENERATOR: "NANTI DI KASIH BANER"
   // ============================================================
+
+  /**
+   * Generates high-res placeholder texture for the Arched Top Banner ("NANTI DI KASIH BANER").
+   * Beautifully composed to fit the rounded arch fascia.
+   */
+  generateArchedBannerTexture(width, height) {
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d');
+
+    // 1. Rich twilight slate/navy gradient background
+    const bg = ctx.createLinearGradient(0, 0, 0, height);
+    bg.addColorStop(0, '#0c131d');
+    bg.addColorStop(0.35, '#1e293b');
+    bg.addColorStop(0.7, '#182234');
+    bg.addColorStop(1, '#0b1019');
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, width, height);
+
+    const cx = width / 2;
+
+    // 2. Arched Guideline and subtle decorative halo echoing the arch
+    ctx.save();
+    ctx.strokeStyle = 'rgba(71, 85, 105, 0.55)';
+    ctx.lineWidth = 3;
+    ctx.setLineDash([20, 14]);
+    ctx.beginPath();
+    for (let x = 80; x <= width - 80; x += 20) {
+      const norm = (x - cx) / (width / 2 - 80);
+      const y = 80 + (1 - Math.cos(norm * Math.PI * 0.5)) * (height * 0.45);
+      if (x === 80) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.restore();
+
+    // 3. Center Graphic & Typography
+    ctx.save();
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    const centerY = height * 0.46;
+
+    // Photo Icon Frame
+    const iconW = 160;
+    const iconH = 110;
+    const iconY = centerY - 105;
+
+    ctx.strokeStyle = '#94a3b8';
+    ctx.lineWidth = 4;
+    this.roundRect(ctx, cx - iconW / 2, iconY - iconH / 2, iconW, iconH, 14);
+    ctx.stroke();
+
+    // Mountain / photo peaks inside frame
+    ctx.fillStyle = '#64748b';
+    ctx.beginPath();
+    ctx.moveTo(cx - iconW / 2 + 16, iconY + iconH / 2 - 8);
+    ctx.lineTo(cx - 20, iconY - 14);
+    ctx.lineTo(cx + 16, iconY + 18);
+    ctx.lineTo(cx + 44, iconY + 2);
+    ctx.lineTo(cx + iconW / 2 - 16, iconY + iconH / 2 - 8);
+    ctx.closePath();
+    ctx.fill();
+
+    // Sun / circle
+    ctx.beginPath();
+    ctx.arc(cx + 42, iconY - 26, 13, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Main Text: "NANTI DI KASIH BANER"
+    ctx.font = '900 68px "Segoe UI", Arial, sans-serif';
+    ctx.fillStyle = '#ffffff';
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.9)';
+    ctx.shadowBlur = 18;
+    ctx.fillText('NANTI DI KASIH BANER', cx, centerY + 30);
+
+    // Subtitle badge
+    ctx.font = '700 24px "Segoe UI", Arial, sans-serif';
+    ctx.fillStyle = '#94a3b8';
+    ctx.shadowBlur = 0;
+    ctx.fillText('[ FULL FOTO PLACEHOLDER ]', cx, centerY + 105);
+
+    // Detail tag
+    ctx.font = '500 18px monospace';
+    ctx.fillStyle = '#64748b';
+    ctx.fillText('AREA BANNER GABUNGAN LENGKUNG • SIAP DIISI FOTO / DESAIN PENUH', cx, centerY + 155);
+
+    // Subtle corner crop target crosses (+)
+    const drawCross = (px, py) => {
+      ctx.strokeStyle = '#64748b';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.moveTo(px - 14, py);
+      ctx.lineTo(px + 14, py);
+      ctx.moveTo(px, py - 14);
+      ctx.lineTo(px, py + 14);
+      ctx.stroke();
+    };
+    drawCross(100, 100);
+    drawCross(width - 100, 100);
+    drawCross(100, height - 100);
+    drawCross(width - 100, height - 100);
+
+    ctx.restore();
+
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    tex.anisotropy = 4;
+    return tex;
+  }
 
   generatePlaceholderBannerTexture(width, height, isVertical) {
     const canvas = document.createElement('canvas');

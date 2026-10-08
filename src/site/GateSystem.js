@@ -239,9 +239,24 @@ export class GateSystem {
       bannerShape.lineTo(curX, getBottomArchY(curX));
     }
     bannerShape.lineTo(xInnerLeft, yArchStart);
-    bannerShape.closePath();
-
     const bannerGeo = new THREE.ShapeGeometry(bannerShape, 32);
+
+    // CRITICAL THREE.JS FIX: ShapeGeometry sets UVs directly to world (X, Y) coords!
+    // We must normalize UVs to [0, 1] across [xOuterLeft..xOuterRight] and [yArchStart..yTopApex]
+    // so the texture maps perfectly across the entire arched fascia!
+    const posAttr = bannerGeo.attributes.position;
+    const uvAttr = bannerGeo.attributes.uv;
+    const rangeX = xOuterRight - xOuterLeft; // 9.45m
+    const rangeY = yTopApex - yArchStart;     // 2.80m
+
+    for (let i = 0; i < posAttr.count; i++) {
+      const vx = posAttr.getX(i);
+      const vy = posAttr.getY(i);
+      const u = (vx - xOuterLeft) / rangeX;
+      const v = (vy - yArchStart) / rangeY;
+      uvAttr.setXY(i, u, v);
+    }
+    uvAttr.needsUpdate = true;
 
     // Front Arched Banner Face
     const bannerFront = new THREE.Mesh(bannerGeo, mats.bannerTop);
@@ -250,8 +265,19 @@ export class GateSystem {
     bannerFront.receiveShadow = true;
     group.add(bannerFront);
 
-    // Back Arched Banner Face
-    const bannerBack = new THREE.Mesh(bannerGeo, mats.bannerTop);
+    // Back Arched Banner Face (cloned geometry with flipped U so text is unreversed from behind)
+    const bannerBackGeo = bannerGeo.clone();
+    const backUvAttr = bannerBackGeo.attributes.uv;
+    for (let i = 0; i < posAttr.count; i++) {
+      const vx = posAttr.getX(i);
+      const vy = posAttr.getY(i);
+      const u = 1.0 - (vx - xOuterLeft) / rangeX; // horizontal flip for legible back reading
+      const v = (vy - yArchStart) / rangeY;
+      backUvAttr.setXY(i, u, v);
+    }
+    backUvAttr.needsUpdate = true;
+
+    const bannerBack = new THREE.Mesh(bannerBackGeo, mats.bannerTop);
     bannerBack.position.set(0, 0, -zOffset);
     bannerBack.rotation.y = Math.PI;
     bannerBack.castShadow = true;
@@ -473,51 +499,52 @@ export class GateSystem {
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
 
-    const centerY = height * 0.46;
+    const centerY = height * 0.40;
 
     // Photo Icon Frame
-    const iconW = 160;
-    const iconH = 110;
-    const iconY = centerY - 105;
+    const iconW = 170;
+    const iconH = 115;
+    const iconY = centerY - 110;
 
-    ctx.strokeStyle = '#94a3b8';
-    ctx.lineWidth = 4;
-    this.roundRect(ctx, cx - iconW / 2, iconY - iconH / 2, iconW, iconH, 14);
+    ctx.strokeStyle = '#e2e8f0';
+    ctx.lineWidth = 4.5;
+    this.roundRect(ctx, cx - iconW / 2, iconY - iconH / 2, iconW, iconH, 16);
     ctx.stroke();
 
     // Mountain / photo peaks inside frame
-    ctx.fillStyle = '#64748b';
+    ctx.fillStyle = '#94a3b8';
     ctx.beginPath();
-    ctx.moveTo(cx - iconW / 2 + 16, iconY + iconH / 2 - 8);
-    ctx.lineTo(cx - 20, iconY - 14);
-    ctx.lineTo(cx + 16, iconY + 18);
-    ctx.lineTo(cx + 44, iconY + 2);
-    ctx.lineTo(cx + iconW / 2 - 16, iconY + iconH / 2 - 8);
+    ctx.moveTo(cx - iconW / 2 + 18, iconY + iconH / 2 - 10);
+    ctx.lineTo(cx - 20, iconY - 16);
+    ctx.lineTo(cx + 18, iconY + 20);
+    ctx.lineTo(cx + 48, iconY + 2);
+    ctx.lineTo(cx + iconW / 2 - 18, iconY + iconH / 2 - 10);
     ctx.closePath();
     ctx.fill();
 
     // Sun / circle
     ctx.beginPath();
-    ctx.arc(cx + 42, iconY - 26, 13, 0, Math.PI * 2);
+    ctx.arc(cx + 46, iconY - 28, 14, 0, Math.PI * 2);
     ctx.fill();
 
     // Main Text: "NANTI DI KASIH BANER"
-    ctx.font = '900 68px "Segoe UI", Arial, sans-serif';
+    ctx.font = '900 74px "Segoe UI", Arial, sans-serif';
     ctx.fillStyle = '#ffffff';
-    ctx.shadowColor = 'rgba(0, 0, 0, 0.9)';
-    ctx.shadowBlur = 18;
-    ctx.fillText('NANTI DI KASIH BANER', cx, centerY + 30);
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.95)';
+    ctx.shadowBlur = 20;
+    ctx.fillText('NANTI DI KASIH BANER', cx, centerY + 28);
 
     // Subtitle badge
-    ctx.font = '700 24px "Segoe UI", Arial, sans-serif';
-    ctx.fillStyle = '#94a3b8';
-    ctx.shadowBlur = 0;
-    ctx.fillText('[ FULL FOTO PLACEHOLDER ]', cx, centerY + 105);
+    ctx.font = '700 26px "Segoe UI", Arial, sans-serif';
+    ctx.fillStyle = '#38bdf8'; // Bright cyan accent badge
+    ctx.shadowBlur = 8;
+    ctx.fillText('[ FULL FOTO PLACEHOLDER ]', cx, centerY + 102);
 
     // Detail tag
-    ctx.font = '500 18px monospace';
-    ctx.fillStyle = '#64748b';
-    ctx.fillText('AREA BANNER GABUNGAN LENGKUNG • SIAP DIISI FOTO / DESAIN PENUH', cx, centerY + 155);
+    ctx.font = '600 19px monospace';
+    ctx.fillStyle = '#cbd5e1';
+    ctx.shadowBlur = 0;
+    ctx.fillText('AREA BANNER GABUNGAN LENGKUNG • SIAP DIISI FOTO / DESAIN PENUH', cx, centerY + 150);
 
     // Subtle corner crop target crosses (+)
     const drawCross = (px, py) => {

@@ -18,6 +18,11 @@ export class SceneManager {
     this.handleResize();
   }
 
+  getOptimalPixelRatio() {
+    const isMobile = 'ontouchstart' in window || navigator.maxTouchPoints > 0 || window.innerWidth < 768;
+    return isMobile ? Math.min(window.devicePixelRatio, 1.5) : Math.min(window.devicePixelRatio, 2.0);
+  }
+
   initRenderer() {
     this.renderer = new THREE.WebGLRenderer({
       canvas: this.canvas,
@@ -25,7 +30,7 @@ export class SceneManager {
       alpha: false,
       powerPreference: 'high-performance',
     });
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    this.renderer.setPixelRatio(this.getOptimalPixelRatio());
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -88,6 +93,7 @@ export class SceneManager {
       const h = window.innerHeight;
       this.camera.aspect = w / h;
       this.camera.updateProjectionMatrix();
+      this.renderer.setPixelRatio(this.getOptimalPixelRatio());
       this.renderer.setSize(w, h);
       if (this.composer) {
         this.composer.setSize(w, h);
